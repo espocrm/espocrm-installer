@@ -5,15 +5,22 @@ This script automatically installs EspoCRM as a Docker image with NGINX server a
 ## Run
 
 ```
-wget https://raw.githubusercontent.com/espocrm/espocrm-installer/stable/install.sh
+wget https://github.com/espocrm/espocrm-installer/releases/latest/download/install.sh
 bash install.sh
 ```
 
 ## Run with options
 
 ```
-wget https://raw.githubusercontent.com/espocrm/espocrm-installer/stable/install.sh
+wget https://github.com/espocrm/espocrm-installer/releases/latest/download/install.sh
 bash install.sh -y --mode=3 --domain=my-espocrm.com
+```
+
+## Run (only for development)
+
+```
+wget https://raw.githubusercontent.com/espocrm/espocrm-installer/master/install.sh
+bash install.sh
 ```
 
 ## Available options
