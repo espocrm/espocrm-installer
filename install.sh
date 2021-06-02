@@ -520,8 +520,6 @@ fi
 
 cd "espocrm-installer-master"
 
-echo "Good"
-
 # Check and configure a system
 case $(getOs) in
     ubuntu | debian | mint )
