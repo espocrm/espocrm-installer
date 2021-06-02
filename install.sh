@@ -516,7 +516,7 @@ checkFixSystemRequirements "$operatingSystem"
 
 cleanTemporaryFiles
 
-download https://github.com/espocrm/espocrm-installer/archive/refs/heads/master.zip
+download https://github.com/espocrm/espocrm-installer/archive/refs/heads/master.zip "espocrm-installer-master.zip"
 unzip -q "espocrm-installer-master.zip"
 
 if [ ! -d "./espocrm-installer-master" ]; then
