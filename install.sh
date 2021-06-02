@@ -227,10 +227,20 @@ function cleanInstallation() {
     fi
 
     if [ -d "${data[homeDirectory]}" ]; then
-        backupDirectory="${scriptDirectory}/espocrm/before-clean-installation/$(date +'%Y-%m-%d_%H%M%S')"
+        backupDirectory="${scriptDirectory}/espocrm-before-clean/$(date +'%Y-%m-%d_%H%M%S')"
         mkdir -p "${backupDirectory}"
         mv "${data[homeDirectory]}"/* "${backupDirectory}"
         sudo rm -rf "${data[homeDirectory]}"
+    fi
+}
+
+function cleanTemporaryFiles() {
+    if [ -f "${scriptDirectory}/espocrm-installer-master.zip" ]; then
+        rm "${scriptDirectory}/espocrm-installer-master.zip"
+    fi
+
+    if [ -d "${scriptDirectory}/espocrm-installer-master" ]; then
+        rm -rf "${scriptDirectory}/espocrm-installer-master"
     fi
 }
 
@@ -502,17 +512,12 @@ if [ $(isInstalled) = true ]; then
     printExitError "You already have configured an EspoCRM instance. If you want to start a clean installation, use \"--clean\" option."
 fi
 
-if [ -d "./espocrm/tmp" ]; then
-    rm -rf ./espocrm/tmp
-fi
-
-mkdir -p espocrm/tmp
-cd espocrm/tmp
-
 checkFixSystemRequirements "$operatingSystem"
 
+cleanTemporaryFiles
+
 download https://github.com/espocrm/espocrm-installer/archive/refs/heads/master.zip
-unzip -q espocrm-installer-master.zip
+unzip -q "espocrm-installer-master.zip"
 
 if [ ! -d "./espocrm-installer-master" ]; then
     printExitError "Unable to load required files."
@@ -617,3 +622,5 @@ printf "\nAll your files located at: \"${data[homeDirectory]}\"\n"
 if [ -n "$backupDirectory" ]; then
     printf "Backup: $backupDirectory\n"
 fi
+
+cleanTemporaryFiles
