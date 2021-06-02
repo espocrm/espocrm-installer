@@ -1,0 +1,68 @@
+version: '3'
+
+services:
+
+  espocrm-mysql:
+    image: mysql:8
+    container_name: espocrm-mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: %%MYSQL_ROOT_PASSWORD%%
+      MYSQL_DATABASE: espocrm
+      MYSQL_USER: espocrm
+      MYSQL_PASSWORD: %%MYSQL_PASSWORD%%
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    networks:
+      - internal
+
+  espocrm-nginx:
+    image: nginx
+    container_name: espocrm-nginx
+    restart: always
+    volumes:
+      - ./data/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./data/espocrm:/var/www/html
+      - ./data/nginx/espocrm.conf:/etc/nginx/espocrm.conf
+      - ./data/nginx/logs:/var/log/nginx
+      - ./data/nginx/ssl:/etc/nginx/ssl
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - external
+
+  espocrm:
+    image: espocrm/espocrm:fpm
+    container_name: espocrm
+    environment:
+      ESPOCRM_DATABASE_HOST: espocrm-mysql
+      ESPOCRM_DATABASE_USER: espocrm
+      ESPOCRM_DATABASE_PASSWORD: %%MYSQL_PASSWORD%%
+      ESPOCRM_ADMIN_USERNAME: %%ADMIN_USERNAME%%
+      ESPOCRM_ADMIN_PASSWORD: %%ADMIN_PASSWORD%%
+      ESPOCRM_SITE_URL: "%%ESPOCRM_SITE_URL%%"
+    restart: always
+    volumes:
+     - ./data/espocrm:/var/www/html
+    networks:
+      - external
+      - internal
+
+  espocrm-cron:
+    image: espocrm/espocrm:fpm
+    container_name: espocrm-cron
+    volumes:
+     - ./data/espocrm:/var/www/html
+    restart: always
+    entrypoint: docker-cron.sh
+    networks:
+      - external
+      - internal
+
+networks:
+  external:
+    external: true
+  internal:
+    external: false
