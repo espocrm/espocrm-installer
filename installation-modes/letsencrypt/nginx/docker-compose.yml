@@ -13,7 +13,8 @@ services:
       MYSQL_USER: espocrm
       MYSQL_PASSWORD: %%MYSQL_PASSWORD%%
     volumes:
-      - ./data/mysql:/var/lib/mysql
+      - ./data/mysql/data:/var/lib/mysql
+      - ./data/mysql/logs:/var/log/mysql
     networks:
       - internal
 

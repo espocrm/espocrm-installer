@@ -617,7 +617,7 @@ Access information to your EspoCRM instance:
   Password: ${data[adminPassword]}
 "
 
-printf "\nAll your files located at: \"${data[homeDirectory]}\"\n"
+printf "\nAll your files are located at: \"${data[homeDirectory]}\"\n"
 
 if [ -n "$backupDirectory" ]; then
     printf "Backup: $backupDirectory\n"
