@@ -14,7 +14,6 @@ services:
       MYSQL_PASSWORD: %%MYSQL_PASSWORD%%
     volumes:
       - ./data/mysql/data:/var/lib/mysql
-      - ./data/mysql/logs:/var/log/mysql
     networks:
       - internal
 
