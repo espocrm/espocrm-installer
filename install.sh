@@ -65,10 +65,6 @@ function handleArguments() {
                 data[email]="${value}"
                 ;;
 
-            --homeDirectory)
-                data[homeDirectory]="${value}"
-                ;;
-
             --mysqlRootPassword)
                 data[mysqlRootPassword]="${value}"
                 ;;
@@ -207,7 +203,7 @@ function isEmailValidated() {
 }
 
 function isInstalled() {
-    if [ -f "${data[homeDirectory]}/docker-compose.yml" ]; then
+    if [ -f "${defaults[homeDirectory]}/docker-compose.yml" ]; then
         echo true
         return
     fi
@@ -226,11 +222,11 @@ function cleanInstallation() {
         docker rm $(docker ps -aqf "name=espocrm") > /dev/null 2>&1
     fi
 
-    if [ -d "${data[homeDirectory]}" ]; then
+    if [ -d "${defaults[homeDirectory]}" ]; then
         backupDirectory="${scriptDirectory}/espocrm-before-clean/$(date +'%Y-%m-%d_%H%M%S')"
         mkdir -p "${backupDirectory}"
-        mv "${data[homeDirectory]}"/* "${backupDirectory}"
-        sudo rm -rf "${data[homeDirectory]}"
+        mv "${defaults[homeDirectory]}"/* "${backupDirectory}"
+        sudo rm -rf "${defaults[homeDirectory]}"
     fi
 }
 
@@ -552,9 +548,9 @@ case $mode in
 esac
 
 # Prepare docker images
-mkdir -p "${data[homeDirectory]}"
-mkdir -p "${data[homeDirectory]}/data"
-mkdir -p "${data[homeDirectory]}/data/${data[server]}"
+mkdir -p "${defaults[homeDirectory]}"
+mkdir -p "${defaults[homeDirectory]}/data"
+mkdir -p "${defaults[homeDirectory]}/data/${data[server]}"
 
 if [ ! -d "./installation-modes/$mode/${data[server]}" ]; then
     printExitError "Unable to find configuration for the \"${data[server]}\" server. Try to run the installation again."
@@ -564,18 +560,18 @@ if [ ! -f "./installation-modes/$mode/${data[server]}/docker-compose.yml" ]; the
     printExitError "Error: Unable to find \"docker-compose.yml\" file. Try to run the installation again."
 fi
 
-mv "./installation-modes/$mode/${data[server]}/docker-compose.yml" "${data[homeDirectory]}/docker-compose.yml"
-mv "./installation-modes/$mode/${data[server]}"/* "${data[homeDirectory]}/data/${data[server]}"
+mv "./installation-modes/$mode/${data[server]}/docker-compose.yml" "${defaults[homeDirectory]}/docker-compose.yml"
+mv "./installation-modes/$mode/${data[server]}"/* "${defaults[homeDirectory]}/data/${data[server]}"
 
 # Copy helper commands
 find "./commands" -type f  | while read file; do
     fileName=$(basename "$file")
-    cp "$file" "${data[homeDirectory]}/$fileName"
-    chmod +x "${data[homeDirectory]}/$fileName"
+    cp "$file" "${defaults[homeDirectory]}/$fileName"
+    chmod +x "${defaults[homeDirectory]}/$fileName"
 done
 
 # Run Docker
-docker-compose -f "${data[homeDirectory]}/docker-compose.yml" up -d || {
+docker-compose -f "${defaults[homeDirectory]}/docker-compose.yml" up -d || {
     exit 1
 }
 
@@ -606,7 +602,7 @@ fi
 if [ "$mode" == "ssl" ]; then
     printf "
 IMPORTANT: Your EspoCRM instance is working in insecure mode with a self-signed certificate.
-You have to copy your own SSL/TLS certificates to \"${data[homeDirectory]}/data/${data[server]}/data/nginx/ssl\".
+You have to copy your own SSL/TLS certificates to \"${defaults[homeDirectory]}/data/${data[server]}/data/nginx/ssl\".
 "
 fi
 
@@ -617,7 +613,7 @@ Access information to your EspoCRM instance:
   Password: ${data[adminPassword]}
 "
 
-printf "\nAll your files are located at: \"${data[homeDirectory]}\"\n"
+printf "\nAll your files are located at: \"${defaults[homeDirectory]}\"\n"
 
 if [ -n "$backupDirectory" ]; then
     printf "Backup: $backupDirectory\n"
