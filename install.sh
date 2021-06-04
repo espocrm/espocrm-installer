@@ -428,14 +428,14 @@ handleArguments "$@"
 
 operatingSystem=$(getOs)
 
-if [ $(isInstalled) = true ]; then
-    printExitError "You already have configured an EspoCRM instance. If you want to start a clean installation, use \"--clean\" option."
-fi
-
 if [ -n "$needClean" ] && [ $needClean = true ]; then
     cleanInstallation || {
         printExitError "Unable to clean existing installation."
     }
+fi
+
+if [ $(isInstalled) = true ]; then
+    printExitError "You already have configured an EspoCRM instance. If you want to start a clean installation, use \"--clean\" option."
 fi
 
 if [ -z "$noConfirmation" ]; then
