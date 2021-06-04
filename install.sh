@@ -432,6 +432,12 @@ if [ $(isInstalled) = true ]; then
     printExitError "You already have configured an EspoCRM instance. If you want to start a clean installation, use \"--clean\" option."
 fi
 
+if [ -n "$needClean" ] && [ $needClean = true ]; then
+    cleanInstallation || {
+        printExitError "Unable to clean existing installation."
+    }
+fi
+
 if [ -z "$noConfirmation" ]; then
     printf "This script will install EspoCRM and other required third-party components (Docker, Docker-compose, Nginx, PHP, MySQL).\n"
 
@@ -504,12 +510,6 @@ fi
 
 if [ -z "$noConfirmation" ]; then
     displaySummaryInformation
-fi
-
-if [ -n "$needClean" ] && [ $needClean = true ]; then
-    cleanInstallation || {
-        printExitError "Unable to clean existing installation."
-    }
 fi
 
 checkFixSystemRequirements "$operatingSystem"
