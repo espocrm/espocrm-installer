@@ -32,7 +32,7 @@ echo "server {
     listen 80;
     listen [::]:80;
 
-    server_name $domain www.$domain;
+    server_name $domain;
 
     location ~ /.well-known/acme-challenge {
         allow all;
@@ -64,7 +64,7 @@ docker run -it --rm \
     --rsa-key-size 4096 \
     --force-renewal \
     --staging \
-    -d $domain -d www.$domain
+    -d $domain
 
 docker stop tmp-nginx
 docker rm tmp-nginx
