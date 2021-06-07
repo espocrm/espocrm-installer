@@ -65,8 +65,9 @@ docker run -it --rm \
     --force-renewal \
     -d $domain
 
-docker stop tmp-nginx
-docker rm tmp-nginx
+docker stop tmp-nginx > /dev/null 2>&1
+docker rm tmp-nginx > /dev/null 2>&1
+
 rm -rf ./tmp
 
 if [ ! -d "./$server/ssl/live/$domain" ]; then

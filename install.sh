@@ -217,6 +217,8 @@ function isInstalled() {
 }
 
 function cleanInstallation() {
+    printf "Cleaning the previous installation...\n"
+
     if [ "$(docker ps -aqf "name=espocrm")" ]; then
         docker stop $(docker ps -aqf "name=espocrm") > /dev/null 2>&1
         docker rm $(docker ps -aqf "name=espocrm") > /dev/null 2>&1
