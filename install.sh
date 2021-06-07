@@ -169,13 +169,15 @@ function isFqdn() {
 }
 
 function getServerIp() {
-    local serverIP=$(ip route get 1 | awk '{print $NF;exit}')
+    local serverIP=$(hostname -I | awk '{print $1}')
 
-    if [ -z "$serverIP" ]; then
-        serverIP=$(hostname -I | awk '{print $1}')
+    if [ -z "$serverIP" ] || [ "$(isIpAddress $serverIP)" != true ]; then
+        serverIP=$(ip route get 1 | awk '{print $NF;exit}')
     fi
 
-    echo "$serverIP"
+    if [ "$(isIpAddress $serverIP)" = true ]; then
+        echo "$serverIP"
+    fi
 }
 
 function isIpAddress() {
