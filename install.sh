@@ -451,7 +451,7 @@ if [ -z "${data[domain]}" ]; then
     printf "Enter a domain name or IP for your EspoCRM instance (e.g. example.org)"
 
     if [ -n "$hostname" ]; then
-        printf ". Leave emply for using your hostname \"${hostname}\""
+        printf ". Leave empty for using your existing domain: \"${hostname}\""
     fi
 
     printf ": "
