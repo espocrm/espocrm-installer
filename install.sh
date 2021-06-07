@@ -324,11 +324,11 @@ function displaySummaryInformation() {
     local mode="${data[mode]}"
 
     printf "Summary information:\n"
-    printf "\tDomain: ${data[domain]}\n"
-    printf "\tMode: ${modesLabels[$mode]}\n"
+    printf "  Domain: ${data[domain]}\n"
+    printf "  Mode: ${modesLabels[$mode]}\n"
 
     if [ "${data[mode]}" == "2" ]; then
-        printf "\tEmail for the Let's Encrypt certificate: ${data[email]}\n"
+        printf "  Email for the Let's Encrypt certificate: ${data[email]}\n"
     fi
 
     isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
@@ -476,9 +476,9 @@ fi
 
 if [ -z "${data[mode]}" ] && [ "$isFqdn" = true ]; then
     read -p "Please select the installation mode [1-3]:
-  * No SSL/TLS certificate, HTTP only? [1]
-  * Free SSL/TLS certificate provided by the Let's Encrypt (recommended)? [2]
-  * Own SSL/TLS certificate, for advanced users only? [3]
+  * 1. No SSL/TLS certificate, HTTP only? [1]
+  * 2. Free SSL/TLS certificate provided by the Let's Encrypt (recommended)? [2]
+  * 3. Own SSL/TLS certificate, for advanced users only? [3]
 " data[mode]
 
     case "${data[mode]}" in
