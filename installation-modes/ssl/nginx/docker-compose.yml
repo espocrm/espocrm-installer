@@ -1,3 +1,5 @@
+# MODE: ssl
+
 version: '3'
 
 services:

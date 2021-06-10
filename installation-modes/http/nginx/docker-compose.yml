@@ -1,3 +1,5 @@
+# MODE: http
+
 version: '3'
 
 services:

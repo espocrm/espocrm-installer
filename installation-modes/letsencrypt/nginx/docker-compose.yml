@@ -1,3 +1,5 @@
+# MODE: letsencrypt
+
 version: '3'
 
 services:
