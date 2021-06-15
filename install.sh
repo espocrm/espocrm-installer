@@ -645,7 +645,7 @@ function runDocker() {
     for i in {1..60}
     do
         if [ $(curl -sfkLI "${data[url]}" --resolve "${data[domain]}:${data[httpPort]}:127.0.0.1" -o /dev/null -w '%{http_code}\n') == "200" ]; then
-            echo true
+            runDockerResult=true
             return
         fi
 
@@ -653,7 +653,7 @@ function runDocker() {
         sleep 5
     done
 
-    echo false
+    runDockerResult=false
 }
 
 function displaySummaryInformation() {
@@ -741,11 +741,11 @@ esac
 prepareDocker
 
 # Run Docker
-result=$(runDocker)
+runDocker
 
 printf "\n\n"
 
-if [ "$result" = true ]; then
+if [ "$runDockerResult" = true ]; then
     printf "Installation has been successfully completed.\n"
 else
     printf "Installation is finished.\n"
