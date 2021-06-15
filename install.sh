@@ -494,12 +494,14 @@ function runShellScript() {
 
     if [ -n "$scriptParams" ]; then
         "./$script" "${scriptParams[@]}" || {
+            restoreBackup
             exit 1
         }
         return
     fi
 
     "./$script" || {
+        restoreBackup
         exit 1
     }
 }
@@ -633,6 +635,7 @@ function prepareDocker() {
 
 function runDocker() {
     docker-compose -f "${data[homeDirectory]}/docker-compose.yml" up -d || {
+        restoreBackup
         exit 1
     }
 
