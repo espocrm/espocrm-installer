@@ -8,17 +8,39 @@ function printExitError() {
     local red='\033[0;31m'
     local default='\033[0m'
 
+    restoreBackup
+
     printf "\n${red}ERROR${default}: ${messsage}\n"
     exit 1
+}
+
+function restoreBackup() {
+    if [ -n "$backupDirectory" ] && [ -d "$backupDirectory" ]; then
+        cp -rp "${backupDirectory}"/* "${data[homeDirectory]}"
+    fi
 }
 
 if ! [ $(id -u) = 0 ]; then
     printExitError "This script should be run as root or with sudo."
 fi
 
-declare -A defaults=(
+# Pre installation modes:
+# 1. HTTP. Without parameters.
+# 2. Ask3. Without parameters, when already installed. It will ask about:
+#    1. HTTP
+#    2. letsencrypt
+#    3. SSL
+# 3. Ask2. Parameter --ssl. It will ask about letsencrypt + email.
+# 4. SSL. Parameter --ssl --owncertificate. Installation with a set self-signed certificate.
+# 5. Letsencrypt. Parameter --ssl --letsencrypt. It will ask for an email address.
+
+preInstallationMode=1
+
+declare -A data=(
     [server]="nginx"
-    [mode]=1
+    [ssl]=false
+    [owncertificate]=false
+    [letsencrypt]=false
     [mysqlRootPassword]=$(openssl rand -hex 10)
     [mysqlPassword]=$(openssl rand -hex 10)
     [adminUsername]="admin"
@@ -27,15 +49,15 @@ declare -A defaults=(
 )
 
 declare -A modes=(
-    [1]="http"
-    [2]="letsencrypt"
-    [3]="ssl"
+    [1]="letsencrypt"
+    [2]="ssl"
+    [3]="http"
 )
 
 declare -A modesLabels=(
-    [1]="HTTP only"
-    [2]="Let's Encrypt certificate"
-    [3]="Own SSL/TLS certificate"
+    [letsencrypt]="Let's Encrypt certificate"
+    [ssl]="Own SSL/TLS certificate"
+    [http]="HTTP only"
 )
 
 function handleArguments() {
@@ -49,12 +71,20 @@ function handleArguments() {
                 noConfirmation=true
                 ;;
 
-            --clean)
-                needClean=true
+            --ssl)
+                data[ssl]=true
                 ;;
 
-            --mode)
-                data[mode]="${value}"
+            --owncertificate)
+                data[owncertificate]=true
+                ;;
+
+            --letsencrypt)
+                data[letsencrypt]=true
+                ;;
+
+            --clean)
+                needClean=true
                 ;;
 
             --domain)
@@ -99,6 +129,13 @@ function promptConfirmation() {
     echo false
 }
 
+function stopProcess() {
+    restoreBackup
+
+    echo "Aborted."
+    exit 0
+}
+
 function getOs() {
     local osType="unknown"
 
@@ -140,6 +177,41 @@ function getHostname() {
     echo "$hostname"
 }
 
+function getServerIp() {
+    local serverIP=$(hostname -I | awk '{print $1}')
+
+    if [ -z "$serverIP" ] || [ "$(isIpAddress $serverIP)" != true ]; then
+        serverIP=$(ip route get 1 | awk '{print $NF;exit}')
+    fi
+
+    if [ "$(isIpAddress $serverIP)" = true ]; then
+        echo "$serverIP"
+    fi
+}
+
+function getActualInstalledMode() {
+    if [ -f "${data[homeDirectory]}/docker-compose.yml" ]; then
+        head -n 1 "${data[homeDirectory]}/docker-compose.yml" | grep -oP "(?<=MODE: ).*"
+    fi
+}
+
+function getInstalltionMode() {
+    if [ -z "$installationMode" ] || [ -z "${modes[$installationMode]}" ]; then
+        printExitError "Unknown installation mode. Please try again."
+    fi
+
+    echo "${modes[$installationMode]}"
+}
+
+function getYamlValue {
+    local keyName="$1"
+    local category="$2"
+
+    if [ -f "${data[homeDirectory]}/docker-compose.yml" ]; then
+        sed -n "/${category}:/,/networks:/p" "${data[homeDirectory]}/docker-compose.yml" | grep -oP "(?<=${keyName}: ).*"
+    fi
+}
+
 function isFqdn() {
     local hostname=$1
 
@@ -159,6 +231,12 @@ function isFqdn() {
         return
     fi
 
+    echo false
+}
+
+function isHostAvailable() {
+    local hostname=$1
+
     host $hostname 2>&1 > /dev/null
     if [ $? -eq 0 ]; then
         echo true
@@ -166,18 +244,6 @@ function isFqdn() {
     fi
 
     echo false
-}
-
-function getServerIp() {
-    local serverIP=$(hostname -I | awk '{print $1}')
-
-    if [ -z "$serverIP" ] || [ "$(isIpAddress $serverIP)" != true ]; then
-        serverIP=$(ip route get 1 | awk '{print $NF;exit}')
-    fi
-
-    if [ "$(isIpAddress $serverIP)" = true ]; then
-        echo "$serverIP"
-    fi
 }
 
 function isIpAddress() {
@@ -205,7 +271,7 @@ function isEmailValidated() {
 }
 
 function isInstalled() {
-    if [ -f "${defaults[homeDirectory]}/docker-compose.yml" ]; then
+    if [ -d "${data[homeDirectory]}" ]; then
         echo true
         return
     fi
@@ -216,77 +282,6 @@ function isInstalled() {
     fi
 
     echo false
-}
-
-function cleanInstallation() {
-    printf "Cleaning the previous installation...\n"
-
-    if [ "$(docker ps -aqf "name=espocrm")" ]; then
-        docker stop $(docker ps -aqf "name=espocrm") > /dev/null 2>&1
-        docker rm $(docker ps -aqf "name=espocrm") > /dev/null 2>&1
-    fi
-
-    if [ -d "${defaults[homeDirectory]}" ]; then
-        backupDirectory="${scriptDirectory}/espocrm-before-clean/$(date +'%Y-%m-%d_%H%M%S')"
-        mkdir -p "${backupDirectory}"
-        mv "${defaults[homeDirectory]}"/* "${backupDirectory}"
-        sudo rm -rf "${defaults[homeDirectory]}"
-    fi
-}
-
-function cleanTemporaryFiles() {
-    if [ -f "${scriptDirectory}/espocrm-installer-master.zip" ]; then
-        rm "${scriptDirectory}/espocrm-installer-master.zip"
-    fi
-
-    if [ -d "${scriptDirectory}/espocrm-installer-master" ]; then
-        rm -rf "${scriptDirectory}/espocrm-installer-master"
-    fi
-}
-
-function normalizeData() {
-    declare -a requiredFields=(
-        domain
-    )
-
-    for param in "${!defaults[@]}"
-    do
-        if [ -z "${data[$param]}" ]; then
-            data[$param]="${defaults[$param]}"
-        fi
-    done
-
-    for requiredField in "${requiredFields[@]}"
-    do
-        if [ -z "${data[$requiredField]}" ]; then
-            printExitError "The field \"$requiredField\" is required."
-        fi
-    done
-
-    if [ "${data[mode]}" == "2" ]; then
-        local isEmailValidated=$(isEmailValidated "${data[email]}")
-
-        if [ -z "${data[email]}" ] || [ "$isEmailValidated" != true ]; then
-            printExitError "Empty or incorrect \"email\" field."
-        fi
-    fi
-
-    data[url]="http://${data[domain]}"
-    data[httpPort]="80"
-
-    if [ "${data[mode]}" != "1" ]; then
-        data[url]="https://${data[domain]}"
-        data[httpPort]="443"
-    fi
-}
-
-function createParamsFromData() {
-    for field in "${!data[@]}"
-    do
-        if [ -n "${data[$field]}" ]; then
-            params+=("--$field=${data[$field]}")
-        fi
-    done
 }
 
 function checkFixSystemRequirements() {
@@ -320,31 +315,131 @@ function checkFixSystemRequirements() {
     esac
 }
 
-function displaySummaryInformation() {
-    local mode="${data[mode]}"
+function backupActualInstallation {
+    local withRemoval=${1:-false}
 
-    printf "Summary information:\n"
-    printf "  Domain: ${data[domain]}\n"
-    printf "  Mode: ${modesLabels[$mode]}\n"
-
-    if [ "${data[mode]}" == "2" ]; then
-        printf "  Email for the Let's Encrypt certificate: ${data[email]}\n"
+    if [ ! -d "${data[homeDirectory]}" ]; then
+        return
     fi
 
-    isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
-    if [ "$isConfirmed" != true ]; then
-        exit 0
+    backupDirectory="${scriptDirectory}/espocrm-backup/$(date +'%Y-%m-%d_%H%M%S')"
+    mkdir -p "${backupDirectory}"
+
+    cp -rp "${data[homeDirectory]}"/* "${backupDirectory}"
+
+    echo "Backup created: $backupDirectory"
+
+    if [ "$withRemoval" = true ]; then
+        rm -rf "${data[homeDirectory]}"
     fi
 }
 
-function getInstalltionMode() {
-    local mode="${data[mode]}"
+function cleanInstallation() {
+    printf "Cleaning the previous installation...\n"
 
-    if [ -z "${modes[$mode]}" ]; then
-        printExitError "Unknown installation mode. Please try again."
+    if [ "$(docker ps -aqf "name=espocrm")" ]; then
+        docker stop $(docker ps -aqf "name=espocrm") > /dev/null 2>&1
+        docker rm $(docker ps -aqf "name=espocrm") > /dev/null 2>&1
     fi
 
-    echo "${modes[$mode]}"
+    backupActualInstallation true
+}
+
+function cleanTemporaryFiles() {
+    if [ -f "${scriptDirectory}/espocrm-installer-master.zip" ]; then
+        rm "${scriptDirectory}/espocrm-installer-master.zip"
+    fi
+
+    if [ -d "${scriptDirectory}/espocrm-installer-master" ]; then
+        rm -rf "${scriptDirectory}/espocrm-installer-master"
+    fi
+}
+
+function normalizeActualInstalledData() {
+    declare -A currentData
+
+    currentData[mysqlRootPassword]=$(getYamlValue "MYSQL_ROOT_PASSWORD" "espocrm-mysql")
+    currentData[mysqlPassword]=$(getYamlValue "MYSQL_PASSWORD" "espocrm-mysql")
+    currentData[adminUsername]=$(getYamlValue "ESPOCRM_ADMIN_USERNAME" "espocrm")
+    currentData[adminPassword]=$(getYamlValue "ESPOCRM_ADMIN_PASSWORD" "espocrm")
+
+    for key in "${!currentData[@]}"
+    do
+        local value="${currentData[$key]}"
+
+        if [ -z "$value" ]; then
+            printExitError "Unable to start the reinstallation process. If you want to start a clean installation with losing your data, use \"--clean\" option."
+        fi
+
+        data[$key]="$value"
+    done
+}
+
+function normalizePreInstallationMode() {
+    if [ "${data[ssl]}" = true ] && [ "${data[owncertificate]}" = true ]; then
+        preInstallationMode=4
+        return
+    fi
+
+    if [ "${data[ssl]}" = true ] && [ "${data[letsencrypt]}" = true ]; then
+        preInstallationMode=5
+        return
+    fi
+
+    if [ "${data[ssl]}" = true ]; then
+        preInstallationMode=3
+        return
+    fi
+}
+
+function normalizeData() {
+    declare -a requiredFields=(
+        domain
+    )
+
+    for requiredField in "${requiredFields[@]}"
+    do
+        if [ -z "${data[$requiredField]}" ]; then
+            printExitError "The field \"$requiredField\" is required."
+        fi
+    done
+
+    if [ "$mode" == "letsencrypt" ]; then
+        local isEmailValidated=$(isEmailValidated "${data[email]}")
+
+        if [ -z "${data[email]}" ] || [ "$isEmailValidated" != true ]; then
+            printExitError "Empty or incorrect \"email\" field."
+        fi
+    fi
+
+    data[url]="http://${data[domain]}"
+    data[httpPort]="80"
+
+    if [ "$mode" != "http" ]; then
+        data[url]="https://${data[domain]}"
+        data[httpPort]="443"
+    fi
+
+    # Validate domain
+    isFqdn=$(isFqdn "${data[domain]}")
+    isIpAddress=$(isIpAddress "${data[domain]}")
+
+    if [ "$isFqdn" != true ] && [ "$isIpAddress" != true ]; then
+        printExitError "Your domain name or IP: \"${data[domain]}\" is incorrect. Please enter a valid one and try again."
+    fi
+
+    if [ "$isFqdn" != true ] && [ "$mode" != "http" ]; then
+        printExitError "Your domain name: \"${data[domain]}\" is incorrect. SSL/TLS certificate can only be used for a valid domain name."
+    fi
+}
+
+function createParamsFromData() {
+    for field in "${!data[@]}"
+    do
+        if [ -n "${data[$field]}" ]; then
+            params+=("--$field=${data[$field]}")
+        fi
+    done
 }
 
 function download() {
@@ -409,104 +504,195 @@ function runShellScript() {
     }
 }
 
-function printExitError() {
-    local messsage="$1"
+function handleExistingInstallation {
+    if [ -n "$needClean" ] && [ $needClean = true ]; then
+        cleanInstallation || {
+            printExitError "Unable to clean existing installation."
+        }
+    fi
 
-    local red='\033[0;31m'
-    local default='\033[0m'
+    if [ $(isInstalled) != true ]; then
+        return
+    fi
 
-    printf "\n${red}ERROR${default}: ${messsage}\n"
-    exit 1
+    echo "The installed EspoCRM instance is found. Starting the reinstallation process..."
+
+    normalizeActualInstalledData
+
+    case "$(getActualInstalledMode)" in
+        http | letsencrypt | ssl )
+            preInstallationMode=2
+            backupActualInstallation
+
+            rm -rf "${data[homeDirectory]}/data/${data[server]}"
+            rm "${data[homeDirectory]}/docker-compose.yml"
+            ;;
+
+        * )
+            printExitError "Unable to start the reinstallation process. If you want to start a clean installation with losing your data, use \"--clean\" option."
+            ;;
+    esac
 }
 
-#--------------------------------------------
-scriptDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
+function handlePreInstallationMode() {
+    local mode="$1"
 
-declare -A data
-
-handleArguments "$@"
-
-operatingSystem=$(getOs)
-
-if [ -n "$needClean" ] && [ $needClean = true ]; then
-    cleanInstallation || {
-        printExitError "Unable to clean existing installation."
-    }
-fi
-
-if [ $(isInstalled) = true ]; then
-    printExitError "You already have configured an EspoCRM instance. If you want to start a clean installation, use \"--clean\" option."
-fi
-
-if [ -z "$noConfirmation" ]; then
-    printf "This script will install EspoCRM and other required third-party components (Docker, Docker-compose, Nginx, PHP, MySQL).\n"
-
-    isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
-    if [ "$isConfirmed" != true ]; then
-        exit 0
-    fi
-fi
-
-if [ -z "${data[domain]}" ]; then
-    hostname=$(getHostname)
-
-    printf "Enter a domain name or IP for your EspoCRM instance (e.g. example.org)"
-
-    if [ -n "$hostname" ]; then
-        printf ". Leave empty for using your existing domain: \"${hostname}\""
-    fi
-
-    printf ": "
-
-    read domain
-
-    if [ -z "$domain" ]; then
-        domain="$hostname"
-    fi
-
-    data[domain]="$domain"
-fi
-
-isFqdn=$(isFqdn "${data[domain]}")
-isIpAddress=$(isIpAddress "${data[domain]}")
-
-if [ "$isFqdn" != true ] && [ "$isIpAddress" != true ]; then
-    printExitError "Your domain name or IP: \"${data[domain]}\" is incorrect. Please enter a valid one and try again."
-fi
-
-if [ -z "${data[mode]}" ] && [ "$isFqdn" = true ]; then
-    read -p "Please select the installation mode [1-3]:
-  * 1. No SSL/TLS certificate, HTTP only? [1]
-  * 2. Free SSL/TLS certificate provided by the Let's Encrypt (recommended)? [2]
-  * 3. Own SSL/TLS certificate, for advanced users only? [3]
-" data[mode]
-
-    case "${data[mode]}" in
+    case "$mode" in
         1 )
+            installationMode=3
             ;;
 
         2 )
+            read -p "Please select the installation mode [1-3]:
+  * 1. Free SSL/TLS certificate provided by the Let's Encrypt (recommended)? [1]
+  * 2. Own SSL/TLS certificate, for advanced users only? [2]
+  * 3. No SSL/TLS certificate, HTTP only? [3]
+" installationMode
+            ;;
+
+        3 )
+            read -p "Please select the installation mode [1-2]:
+  * 1. Free SSL/TLS certificate provided by the Let's Encrypt (recommended)? [1]
+  * 2. Own SSL/TLS certificate, for advanced users only? [2]
+" installationMode
+            ;;
+
+        4 )
+            installationMode=2
+            ;;
+
+        5 )
+            installationMode=1
+            ;;
+
+        * )
+            printExitError "Unknown installation mode. Please try to run the script again."
+            ;;
+    esac
+}
+
+function handleInstallationMode() {
+    local mode="$1"
+
+    case "$mode" in
+        1 )
             if [ -z "${data[email]}" ]; then
                 read -p "Enter your email address to use the Let's Encrypt certificate: " data[email]
             fi
             ;;
 
-        3 )
-            printf "For using your own SSL/TLS certificates you have to copy them to the \"${defaults[homeDirectory]}/data/nginx/ssl\" manually.\n"
+        2 )
+            printf "For using your own SSL/TLS certificates you have to copy them to the \"${data[homeDirectory]}/data/${data[server]}/ssl\" manually.\n"
             sleep 1
+            ;;
+
+        3 )
+            if [ -z "${data[domain]}" ]; then
+                data[domain]=$(getServerIp)
+
+                isIpAddress=$(isIpAddress "${data[domain]}")
+                if [ "$isIpAddress" != true ]; then
+                    read -p "Specify an IP address or a domain name for the future EspoCRM instance (e.g. 234.32.0.32 or espoexample.com)" data[domain]
+                fi
+            fi
             ;;
 
         * )
             printExitError "Incorrect installation mode. Please try again."
             ;;
     esac
+
+    if [ -z "${data[domain]}" ]; then
+        read -p "Specify a domain name for the future EspoCRM instance (e.g. espoexample.com): " data[domain]
+    fi
+}
+
+function prepareDocker() {
+    mkdir -p "${data[homeDirectory]}"
+    mkdir -p "${data[homeDirectory]}/data"
+    mkdir -p "${data[homeDirectory]}/data/${data[server]}"
+
+    if [ ! -d "./installation-modes/$mode/${data[server]}" ]; then
+        printExitError "Unable to find configuration for the \"${data[server]}\" server. Try to run the installation again."
+    fi
+
+    if [ ! -f "./installation-modes/$mode/${data[server]}/docker-compose.yml" ]; then
+        printExitError "Error: Unable to find \"docker-compose.yml\" file. Try to run the installation again."
+    fi
+
+    mv "./installation-modes/$mode/${data[server]}/docker-compose.yml" "${data[homeDirectory]}/docker-compose.yml"
+    mv "./installation-modes/$mode/${data[server]}"/* "${data[homeDirectory]}/data/${data[server]}"
+
+    # Copy helper commands
+    find "./commands" -type f  | while read file; do
+        fileName=$(basename "$file")
+        cp "$file" "${data[homeDirectory]}/$fileName"
+        chmod +x "${data[homeDirectory]}/$fileName"
+    done
+}
+
+function runDocker() {
+    docker-compose -f "${data[homeDirectory]}/docker-compose.yml" up -d || {
+        exit 1
+    }
+
+    printf "\nWaiting for the first-time EspoCRM configuration.\n"
+    printf "This may take up to 5 minutes.\n"
+
+    for i in {1..60}
+    do
+        if [ $(curl -sfkLI "${data[url]}" --resolve "${data[domain]}:${data[httpPort]}:127.0.0.1" -o /dev/null -w '%{http_code}\n') == "200" ]; then
+            echo true
+            return
+        fi
+
+        printf "."
+        sleep 5
+    done
+
+    echo false
+}
+
+function displaySummaryInformation() {
+    printf "Summary information:\n"
+    printf "  Domain: ${data[domain]}\n"
+    printf "  Mode: ${modesLabels[$mode]}\n"
+
+    if [ "$mode" == "letsencrypt" ]; then
+        printf "  Email for the Let's Encrypt certificate: ${data[email]}\n"
+    fi
+
+    isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
+    if [ "$isConfirmed" != true ]; then
+        stopProcess
+    fi
+}
+
+#--------------------------------------------
+scriptDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
+operatingSystem=$(getOs)
+
+handleArguments "$@"
+
+if [ -z "$noConfirmation" ]; then
+    printf "This script will install EspoCRM and other required third-party components (Docker, Docker-compose, Nginx, PHP, MySQL).\n"
+
+    isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
+    if [ "$isConfirmed" != true ]; then
+        stopProcess
+    fi
 fi
+
+handleExistingInstallation
+
+normalizePreInstallationMode
+
+handlePreInstallationMode "$preInstallationMode"
+handleInstallationMode "$installationMode"
+
+mode=$(getInstalltionMode)
 
 normalizeData
-
-if [ "$isFqdn" != true ] && [ "${data[mode]}" != "1" ]; then
-    printExitError "Your domain name: \"${data[domain]}\" is incorrect. SSL/TLS certificate can only be used for a valid domain name."
-fi
 
 if [ -z "$noConfirmation" ]; then
     displaySummaryInformation
@@ -536,9 +722,6 @@ case $(getOs) in
         ;;
 esac
 
-# Run installation-modes script
-mode=$(getInstalltionMode)
-
 case $mode in
     http | ssl | letsencrypt )
         declare -a params
@@ -551,49 +734,11 @@ case $mode in
         ;;
 esac
 
-# Prepare docker images
-mkdir -p "${defaults[homeDirectory]}"
-mkdir -p "${defaults[homeDirectory]}/data"
-mkdir -p "${defaults[homeDirectory]}/data/${data[server]}"
-
-if [ ! -d "./installation-modes/$mode/${data[server]}" ]; then
-    printExitError "Unable to find configuration for the \"${data[server]}\" server. Try to run the installation again."
-fi
-
-if [ ! -f "./installation-modes/$mode/${data[server]}/docker-compose.yml" ]; then
-    printExitError "Error: Unable to find \"docker-compose.yml\" file. Try to run the installation again."
-fi
-
-mv "./installation-modes/$mode/${data[server]}/docker-compose.yml" "${defaults[homeDirectory]}/docker-compose.yml"
-mv "./installation-modes/$mode/${data[server]}"/* "${defaults[homeDirectory]}/data/${data[server]}"
-
-# Copy helper commands
-find "./commands" -type f  | while read file; do
-    fileName=$(basename "$file")
-    cp "$file" "${defaults[homeDirectory]}/$fileName"
-    chmod +x "${defaults[homeDirectory]}/$fileName"
-done
+# Prepare docker
+prepareDocker
 
 # Run Docker
-docker-compose -f "${defaults[homeDirectory]}/docker-compose.yml" up -d || {
-    exit 1
-}
-
-printf "\nWaiting for the first-time EspoCRM configuration.\n"
-printf "This may take up to 5 minutes.\n"
-
-result=false
-
-for i in {1..60}
-do
-    if [ $(curl -sfkLI "${data[url]}" --resolve "${data[domain]}:${data[httpPort]}:127.0.0.1" -o /dev/null -w '%{http_code}\n') == "200" ]; then
-        result=true
-        break
-    fi
-
-    printf "."
-    sleep 5
-done
+result=$(runDocker)
 
 printf "\n\n"
 
@@ -606,7 +751,7 @@ fi
 if [ "$mode" == "ssl" ]; then
     printf "
 IMPORTANT: Your EspoCRM instance is working in insecure mode with a self-signed certificate.
-You have to copy your own SSL/TLS certificates to \"${defaults[homeDirectory]}/data/${data[server]}/data/nginx/ssl\".
+You have to copy your own SSL/TLS certificates to \"${data[homeDirectory]}/data/${data[server]}/data/nginx/ssl\".
 "
 fi
 
@@ -617,10 +762,6 @@ Access information to your EspoCRM instance:
   Password: ${data[adminPassword]}
 "
 
-printf "\nAll your files are located at: \"${defaults[homeDirectory]}\"\n"
-
-if [ -n "$backupDirectory" ]; then
-    printf "Backup: $backupDirectory\n"
-fi
+printf "\nAll your files are located at: \"${data[homeDirectory]}\"\n"
 
 cleanTemporaryFiles
