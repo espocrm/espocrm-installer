@@ -517,7 +517,9 @@ function handleExistingInstallation {
         return
     fi
 
-    echo "The installed EspoCRM instance is found. Starting the reinstallation process..."
+    printf "\n"
+    printf "The installed EspoCRM instance is found.\n"
+    printf "Starting the reinstallation process...\n"
 
     normalizeActualInstalledData
 
@@ -540,22 +542,15 @@ function handlePreInstallationMode() {
     local mode="$1"
 
     case "$mode" in
-        1 )
+        1 | 2 )
             installationMode=3
             ;;
 
-        2 )
-            read -p "Please select the installation mode [1-3]:
-  * 1. Free SSL/TLS certificate provided by the Let's Encrypt (recommended)? [1]
-  * 2. Own SSL/TLS certificate, for advanced users only? [2]
-  * 3. No SSL/TLS certificate, HTTP only? [3]
-" installationMode
-            ;;
-
         3 )
-            read -p "Please select the installation mode [1-2]:
+            read -p "
+Please choose the installation mode you prefer [1-2]:
   * 1. Free SSL/TLS certificate provided by the Let's Encrypt (recommended)? [1]
-  * 2. Own SSL/TLS certificate, for advanced users only? [2]
+  * 2. Own SSL/TLS certificate (for advanced users only)? [2]
 " installationMode
             ;;
 
@@ -579,12 +574,13 @@ function handleInstallationMode() {
     case "$mode" in
         1 )
             if [ -z "${data[email]}" ]; then
-                read -p "Enter your email address to use the Let's Encrypt certificate: " data[email]
+                printf "\n"
+                read -p "Specify your email address to generate the Let's Encrypt certificate: " data[email]
             fi
             ;;
 
         2 )
-            printf "Notice: For using your own SSL/TLS certificates you have to setup them manually after the installation.\n"
+            printf "NOTICE: For using your own SSL/TLS certificates you have to setup them manually after the installation.\n"
             sleep 1
             ;;
 
@@ -594,7 +590,8 @@ function handleInstallationMode() {
 
                 isIpAddress=$(isIpAddress "${data[domain]}")
                 if [ "$isIpAddress" != true ]; then
-                    read -p "Specify an IP address or a domain name for the future EspoCRM instance (e.g. 234.32.0.32 or espoexample.com)" data[domain]
+                    printf "\n"
+                    read -p "Enter a domain name or IP for the future EspoCRM instance (e.g. 234.32.0.32 or espoexample.com)" data[domain]
                 fi
             fi
             ;;
@@ -605,7 +602,8 @@ function handleInstallationMode() {
     esac
 
     if [ -z "${data[domain]}" ]; then
-        read -p "Specify a domain name for the future EspoCRM instance (e.g. espoexample.com): " data[domain]
+        printf "\n"
+        read -p "Enter a domain name for the future EspoCRM instance (e.g. espoexample.com): " data[domain]
     fi
 }
 
@@ -657,6 +655,7 @@ function runDocker() {
 }
 
 function displaySummaryInformation() {
+    printf "\n"
     printf "Summary information:\n"
     printf "  Domain: ${data[domain]}\n"
     printf "  Mode: ${modesLabels[$mode]}\n"
@@ -678,9 +677,9 @@ operatingSystem=$(getOs)
 handleArguments "$@"
 
 if [ -z "$noConfirmation" ]; then
-    printf "This script will install EspoCRM and other required third-party components (Docker, Docker-compose, Nginx, PHP, MySQL).\n"
+    printf "This script will install EspoCRM with all the needed prerequisites (including Docker, Docker-compose, Nginx, PHP, MySQL).\n"
 
-    isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
+    isConfirmed=$(promptConfirmation "Do you want to continue the installation? [y/n] ")
     if [ "$isConfirmed" != true ]; then
         stopProcess
     fi
@@ -746,7 +745,7 @@ runDocker
 printf "\n\n"
 
 if [ "$runDockerResult" = true ]; then
-    printf "Installation has been successfully completed.\n"
+    printf "The installation has been successfully completed.\n"
 else
     printf "Installation is finished.\n"
 fi
@@ -756,7 +755,7 @@ case $mode in
     http )
         printf "
 IMPORTANT: Your EspoCRM instance is working in HTTP mode.
-If you want to install with SSL/TLS certificate, please read the documentation, https://docs.espocrm.com/administration/installation-by-script.
+If you want to install with SSL/TLS certificate, please read the documentation, https://docs.espocrm.com/administration/installation-by-script#installation-with-ssltls-certificate.
 "
         ;;
 
@@ -769,12 +768,12 @@ You have to setup your own SSL/TLS certificates. For more details. please visit 
 esac
 
 printf "
-Access information to your EspoCRM instance:
+Login data/information to your EspoCRM instance:
   URL: ${data[url]}
   Username: ${data[adminUsername]}
   Password: ${data[adminPassword]}
 "
 
-printf "\nAll your files are located at: \"${data[homeDirectory]}\"\n"
+printf "\nYour instance files are located at: \"${data[homeDirectory]}\".\n"
 
 cleanTemporaryFiles
