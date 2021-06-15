@@ -584,7 +584,7 @@ function handleInstallationMode() {
             ;;
 
         2 )
-            printf "For using your own SSL/TLS certificates you have to copy them to the \"${data[homeDirectory]}/data/${data[server]}/ssl\" manually.\n"
+            printf "Notice: For using your own SSL/TLS certificates you have to setup them manually after the installation.\n"
             sleep 1
             ;;
 
@@ -751,12 +751,22 @@ else
     printf "Installation is finished.\n"
 fi
 
-if [ "$mode" == "ssl" ]; then
-    printf "
-IMPORTANT: Your EspoCRM instance is working in insecure mode with a self-signed certificate.
-You have to copy your own SSL/TLS certificates to \"${data[homeDirectory]}/data/${data[server]}/data/nginx/ssl\".
+# Post installation message
+case $mode in
+    http )
+        printf "
+IMPORTANT: Your EspoCRM instance is working in HTTP mode.
+If you want to install with SSL/TLS certificate, please read the documentation, https://docs.espocrm.com/administration/installation-by-script.
 "
-fi
+        ;;
+
+    ssl )
+        printf "
+IMPORTANT: Your EspoCRM instance is working in insecure mode with a self-signed certificate.
+You have to setup your own SSL/TLS certificates. For more details. please visit https://docs.espocrm.com/administration/installation-by-script#2-own-ssltls-certificate.
+"
+        ;;
+esac
 
 printf "
 Access information to your EspoCRM instance:

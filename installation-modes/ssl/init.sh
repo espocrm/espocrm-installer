@@ -17,10 +17,9 @@ handleParams "$@"
 
 prepareConfiguration
 
-mkdir -p ./nginx/ssl/live/$domain
-touch ./nginx/ssl/live/$domain/PUT_HERE_YOUR_CERTIFICATES
+mkdir -p ./nginx/ssl/cert
 
 # Generate dummy certificates
-openssl req -x509 -nodes -days 30 -subj "/CN=$domain" -newkey rsa:4096 -keyout ./nginx/ssl/live/$domain/privkey.pem -out ./nginx/ssl/live/$domain/fullchain.pem;
+openssl req -x509 -nodes -days 30 -subj "/CN=$domain" -newkey rsa:4096 -keyout ./nginx/ssl/cert/privkey.pem -out ./nginx/ssl/cert/fullchain.pem;
 
 createDockerNetwork "external"
