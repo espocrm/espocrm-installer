@@ -40,11 +40,12 @@ echo "server {
     }
 }" > ./tmp/nginx-default.conf
 
-# Check and remove existing tmp-nginx
-docker container inspect tmp-nginx > /dev/null 2>&1 && docker rm -f tmp-nginx
+# Check and remove existing espocrm-nginx-tmp
+docker container inspect espocrm-nginx > /dev/null 2>&1 && docker rm -f espocrm-nginx
+docker container inspect espocrm-nginx-tmp > /dev/null 2>&1 && docker rm -f espocrm-nginx-tmp
 
-# Run tmp-nginx
-docker run --name tmp-nginx \
+# Run espocrm-nginx-tmp
+docker run --name espocrm-nginx-tmp \
     -v "$scriptDirectory/tmp/nginx-default.conf":/etc/nginx/conf.d/default.conf \
     -v "$scriptDirectory/$server/ssl":/etc/letsencrypt \
     -v "$scriptDirectory/$server/certbot":/var/www/certbot \
@@ -65,8 +66,8 @@ docker run -it --rm \
     --force-renewal \
     -d $domain
 
-docker stop tmp-nginx > /dev/null 2>&1
-docker rm tmp-nginx > /dev/null 2>&1
+docker stop espocrm-nginx-tmp > /dev/null 2>&1
+docker rm espocrm-nginx-tmp > /dev/null 2>&1
 
 rm -rf ./tmp
 
