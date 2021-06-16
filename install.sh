@@ -755,14 +755,14 @@ case $mode in
     http )
         printf "
 IMPORTANT: Your EspoCRM instance is working in HTTP mode.
-If you want to install with SSL/TLS certificate, please read the documentation, https://docs.espocrm.com/administration/installation-by-script#installation-with-ssltls-certificate.
+If you want to install with SSL/TLS certificate, use \"--ssl\" option. For more details, please visit https://docs.espocrm.com/administration/installation-by-script#installation-with-ssltls-certificate.
 "
         ;;
 
     ssl )
         printf "
 IMPORTANT: Your EspoCRM instance is working in insecure mode with a self-signed certificate.
-You have to setup your own SSL/TLS certificates. For more details. please visit https://docs.espocrm.com/administration/installation-by-script#2-own-ssltls-certificate.
+You have to setup your own SSL/TLS certificates. For more details, please visit https://docs.espocrm.com/administration/installation-by-script#2-own-ssltls-certificate.
 "
         ;;
 esac
