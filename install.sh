@@ -629,6 +629,13 @@ function prepareDocker() {
         cp "$file" "${data[homeDirectory]}/$fileName"
         chmod +x "${data[homeDirectory]}/$fileName"
     done
+
+    # Correct existing params
+    local configFile="${data[homeDirectory]}/data/espocrm/data/config.php"
+
+    if [ -f "$configFile" ]; then
+        sed -i "s#'siteUrl' => '.*'#'siteUrl' => '${data[url]}'#g" "$configFile"
+    fi
 }
 
 function runDocker() {
