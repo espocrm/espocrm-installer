@@ -17,7 +17,6 @@ function actionHelp() {
 }
 
 function actionRebuild() {
-    actionRestart
     /usr/bin/docker exec --user www-data -i espocrm /bin/bash -c "php command.php rebuild"
 }
 
