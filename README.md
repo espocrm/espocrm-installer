@@ -13,7 +13,7 @@ bash install.sh
 
 ```
 wget https://github.com/espocrm/espocrm-installer/releases/latest/download/install.sh
-bash install.sh -y --mode=3 --domain=my-espocrm.com
+bash install.sh -y --ssl --letsencrypt --domain=my-espocrm.com --email=email@my-domain.com
 ```
 
 ## Run (only for development)
