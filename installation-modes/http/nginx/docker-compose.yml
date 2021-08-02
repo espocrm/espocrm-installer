@@ -50,13 +50,13 @@ services:
       - external
       - internal
 
-  espocrm-cron:
+  espocrm-daemon:
     image: espocrm/espocrm:fpm
-    container_name: espocrm-cron
+    container_name: espocrm-daemon
     volumes:
      - ./data/espocrm:/var/www/html
     restart: always
-    entrypoint: docker-cron.sh
+    entrypoint: docker-daemon.sh
     networks:
       - external
       - internal
