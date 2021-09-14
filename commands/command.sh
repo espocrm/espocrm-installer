@@ -13,8 +13,14 @@ function actionHelp() {
     printf "  start       Start services\n"
     printf "  stop        Stop services\n"
     printf "  rebuild     Run EspoCRM rebuild\n"
+    printf "  upgrade     Upgrade EspoCRM\n"
     printf "  help        Information about the commands\n"
 }
+
+function actionUpgrade() {
+    /usr/bin/docker exec --user www-data -i espocrm /bin/bash -c "php command.php upgrade"
+    actionRestart
+}    
 
 function actionRebuild() {
     /usr/bin/docker exec --user www-data -i espocrm /bin/bash -c "php command.php rebuild"
@@ -69,6 +75,10 @@ case "$action" in
 
     rebuild)
         actionRebuild
+        ;;
+      
+    upgrade)
+        actionUpgrade
         ;;
 
     restart)
