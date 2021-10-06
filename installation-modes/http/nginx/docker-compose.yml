@@ -73,6 +73,9 @@ services:
     entrypoint: docker-websocket.sh
     ports:
       - 8080:8080
+    networks:
+      - external
+      - internal
 
 networks:
   external:
