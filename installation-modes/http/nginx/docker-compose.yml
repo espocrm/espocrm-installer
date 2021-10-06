@@ -43,7 +43,7 @@ services:
       ESPOCRM_ADMIN_USERNAME: %%ADMIN_USERNAME%%
       ESPOCRM_ADMIN_PASSWORD: %%ADMIN_PASSWORD%%
       ESPOCRM_SITE_URL: "%%ESPOCRM_SITE_URL%%"
-      ESPOCRM_ENV_WEBSOCKET_SUBMISSION_DSN: "tcp://espocrm-websocket:7777"
+      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBMISSION_DSN: "tcp://espocrm-websocket:7777"
     restart: always
     volumes:
      - ./data/espocrm:/var/www/html
@@ -66,7 +66,8 @@ services:
     container_name: espocrm-websocket
     image: espocrm/espocrm:fpm
     environment:
-      ESPOCRM_ENV_WEBSOCKET_SUBSCRIBER_DSN: "tcp://*:7777"
+      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBSCRIBER_DSN: "tcp://*:7777"
+      ESPOCRM_CONFIG_USE_WEB_SOCKET: "true"
     volumes:
      - ./data/espocrm:/var/www/html
     restart: always
