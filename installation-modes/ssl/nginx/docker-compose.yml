@@ -23,6 +23,8 @@ services:
     image: nginx
     container_name: espocrm-nginx
     restart: always
+    depends_on:
+      - espocrm
     volumes:
       - ./data/nginx/conf.d/:/etc/nginx/conf.d/
       - ./data/espocrm:/var/www/html
@@ -47,8 +49,10 @@ services:
       ESPOCRM_SITE_URL: "%%ESPOCRM_SITE_URL%%"
       ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBMISSION_DSN: "tcp://espocrm-websocket:7777"
     restart: always
+    depends_on:
+      - espocrm-mysql
     volumes:
-     - ./data/espocrm:/var/www/html
+      - ./data/espocrm:/var/www/html
     networks:
       - external
       - internal
@@ -59,6 +63,8 @@ services:
     volumes:
      - ./data/espocrm:/var/www/html
     restart: always
+    depends_on:
+      - espocrm
     entrypoint: docker-daemon.sh
     networks:
       - external
@@ -73,6 +79,8 @@ services:
     volumes:
      - ./data/espocrm:/var/www/html
     restart: always
+    depends_on:
+      - espocrm
     entrypoint: docker-websocket.sh
     ports:
       - 8080:8080
