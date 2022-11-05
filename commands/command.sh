@@ -45,16 +45,7 @@ function actionStatus() {
 }
 
 function actionStop() {
-    if [ -n "$1" ]; then
-        docker stop "$1"
-        docker rm "$1"
-        return
-    fi
-
-    docker stop $(docker ps -aqf "name=espocrm")
-    docker rm $(docker ps -aqf "name=espocrm")
-
-    printf "Stopped.\n"
+    docker-compose -f "$espocrmDirectory/docker-compose.yml" down
 }
 
 espocrmDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
