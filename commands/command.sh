@@ -12,6 +12,7 @@ function actionHelp() {
     printf "  restart     Restart services\n"
     printf "  start       Start services\n"
     printf "  stop        Stop services\n"
+    printf "  build       Build and start services\n"
     printf "  rebuild     Run EspoCRM rebuild\n"
     printf "  help        Information about the commands\n"
 }
@@ -48,6 +49,11 @@ function actionStop() {
     docker-compose -f "$espocrmDirectory/docker-compose.yml" down
 }
 
+function actionBuild() {
+    docker-compose -f "$espocrmDirectory/docker-compose.yml" up -d --build "$@"
+    docker-compose up --build -d
+}
+
 espocrmDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 action=${1:-help}
@@ -76,5 +82,9 @@ case "$action" in
 
     stop)
         actionStop "$option"
+        ;;
+
+    build)
+        actionBuild
         ;;
 esac
