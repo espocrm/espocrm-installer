@@ -208,7 +208,7 @@ function getYamlValue {
     local category="$2"
 
     if [ -f "${data[homeDirectory]}/docker-compose.yml" ]; then
-        sed -n "/${category}:/,/networks:/p" "${data[homeDirectory]}/docker-compose.yml" | grep -oP "(?<=${keyName}: ).*"
+        sed -n "/${category}:/,/networks:/p" "${data[homeDirectory]}/docker-compose.yml" | grep -oP "(?<=${keyName}: ).*" | head -1
     fi
 }
 
