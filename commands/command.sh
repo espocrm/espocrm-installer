@@ -15,6 +15,7 @@ function actionHelp() {
     printf "  build       Build and start services\n"
     printf "  rebuild     Run EspoCRM rebuild\n"
     printf "  upgrade     Upgrade all EspoCRM services\n"
+    printf "  clean       Remove old and unused data\n"
     printf "  help        Information about the commands\n"
 }
 
@@ -60,6 +61,10 @@ function actionUpgrade() {
     docker-compose -f "$espocrmDirectory/docker-compose.yml" up -d
 }
 
+function actionClean() {
+    docker image prune -f
+}
+
 espocrmDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 action=${1:-help}
@@ -96,5 +101,9 @@ case "$action" in
 
     upgrade)
         actionUpgrade
+        ;;
+
+    clean)
+        actionClean
         ;;
 esac
