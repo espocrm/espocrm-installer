@@ -357,12 +357,12 @@ function cleanInstallation() {
 }
 
 function cleanTemporaryFiles() {
-    if [ -f "${scriptDirectory}/espocrm-installer.zip" ]; then
-        rm "${scriptDirectory}/espocrm-installer.zip"
+    if [ -f "${scriptDirectory}/espocrm-installer-master.zip" ]; then
+        rm "${scriptDirectory}/espocrm-installer-master.zip"
     fi
 
-    if [ -d "${scriptDirectory}/espocrm-installer" ]; then
-        rm -rf "${scriptDirectory}/espocrm-installer"
+    if [ -d "${scriptDirectory}/espocrm-installer-master" ]; then
+        rm -rf "${scriptDirectory}/espocrm-installer-master"
     fi
 }
 
@@ -619,12 +619,12 @@ function handleInstallationMode() {
 }
 
 function downloadSourceFiles() {
-    rm -rf ./espocrm-installer.zip ./espocrm-installer/
+    rm -rf ./espocrm-installer-master.zip ./espocrm-installer-master/
 
-    download https://github.com/espocrm/espocrm-installer/archive/refs/heads/master.zip "espocrm-installer.zip"
-    unzip -q "espocrm-installer.zip"
+    download https://github.com/espocrm/espocrm-installer/archive/refs/heads/master.zip "espocrm-installer-master.zip"
+    unzip -q "espocrm-installer-master.zip"
 
-    if [ ! -d "./espocrm-installer" ]; then
+    if [ ! -d "./espocrm-installer-master" ]; then
         printExitError "Unable to load source files."
     fi
 }
@@ -732,7 +732,7 @@ function actionMain() {
 
     downloadSourceFiles
 
-    cd "espocrm-installer"
+    cd "espocrm-installer-master"
 
     # Check and configure a system
     case $(getOs) in
@@ -805,7 +805,7 @@ actionCommand() {
         printExitError "EspoCRM directory is not found."
     fi
 
-    cp ./espocrm-installer/commands/command.sh "${data[homeDirectory]}/command.sh"
+    cp ./espocrm-installer-master/commands/command.sh "${data[homeDirectory]}/command.sh"
 }
 
 #---------------------------------------
