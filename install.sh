@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# EspoCRM installer MASTER
+#
+# EspoCRM - Open Source CRM application.
+# Copyright (C) 2014-2022 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+# Website: https://www.espocrm.com
+
 set -e
 
 function printExitError() {
@@ -46,6 +52,7 @@ declare -A data=(
     [adminUsername]="admin"
     [adminPassword]=$(openssl rand -hex 6)
     [homeDirectory]="/var/www/espocrm"
+    [action]="main"
 )
 
 declare -A modes=(
@@ -109,6 +116,10 @@ function handleArguments() {
 
             --adminPassword)
                 data[adminPassword]="${value}"
+                ;;
+
+            --command)
+                data[action]="command"
                 ;;
         esac
     done
@@ -346,12 +357,12 @@ function cleanInstallation() {
 }
 
 function cleanTemporaryFiles() {
-    if [ -f "${scriptDirectory}/espocrm-installer-master.zip" ]; then
-        rm "${scriptDirectory}/espocrm-installer-master.zip"
+    if [ -f "${scriptDirectory}/espocrm-installer.zip" ]; then
+        rm "${scriptDirectory}/espocrm-installer.zip"
     fi
 
-    if [ -d "${scriptDirectory}/espocrm-installer-master" ]; then
-        rm -rf "${scriptDirectory}/espocrm-installer-master"
+    if [ -d "${scriptDirectory}/espocrm-installer" ]; then
+        rm -rf "${scriptDirectory}/espocrm-installer"
     fi
 }
 
@@ -607,6 +618,17 @@ function handleInstallationMode() {
     fi
 }
 
+function downloadSourceFiles() {
+    rm -rf ./espocrm-installer.zip ./espocrm-installer/
+
+    download https://github.com/espocrm/espocrm-installer/archive/refs/heads/master.zip "espocrm-installer.zip"
+    unzip -q "espocrm-installer.zip"
+
+    if [ ! -d "./espocrm-installer" ]; then
+        printExitError "Unable to load source files."
+    fi
+}
+
 function prepareDocker() {
     mkdir -p "${data[homeDirectory]}"
     mkdir -p "${data[homeDirectory]}/data"
@@ -677,110 +699,136 @@ function displaySummaryInformation() {
     fi
 }
 
-#--------------------------------------------
+#---------- ACTIONS --------------------
+
+function actionMain() {
+    if [ -z "$noConfirmation" ]; then
+        printf "This script will install EspoCRM with all the needed prerequisites (including Docker, Docker-compose, Nginx, PHP, MySQL).\n"
+
+        isConfirmed=$(promptConfirmation "Do you want to continue the installation? [y/n] ")
+        if [ "$isConfirmed" != true ]; then
+            stopProcess
+        fi
+    fi
+
+    handleExistingInstallation
+
+    normalizePreInstallationMode
+
+    handlePreInstallationMode "$preInstallationMode"
+    handleInstallationMode "$installationMode"
+
+    mode=$(getInstalltionMode)
+
+    normalizeData
+
+    if [ -z "$noConfirmation" ]; then
+        displaySummaryInformation
+    fi
+
+    checkFixSystemRequirements "$operatingSystem"
+
+    cleanTemporaryFiles
+
+    downloadSourceFiles
+
+    cd "espocrm-installer"
+
+    # Check and configure a system
+    case $(getOs) in
+        ubuntu | debian | mint )
+            runShellScript "system-configuration/debian.sh"
+            ;;
+
+        * )
+            printExitError "Your OS is not supported by the script. We recommend to use Ubuntu server."
+            ;;
+    esac
+
+    case $mode in
+        http | ssl | letsencrypt )
+            declare -a params
+            createParamsFromData
+            runShellScript "installation-modes/$mode/init.sh" "${params[@]}"
+            ;;
+
+        * )
+            printExitError "Unknown installation mode \"$mode\"."
+            ;;
+    esac
+
+    # Prepare docker
+    prepareDocker
+
+    # Run Docker
+    runDocker
+
+    printf "\n\n"
+
+    if [ "$runDockerResult" = true ]; then
+        printf "The installation has been successfully completed.\n"
+    else
+        printf "Installation is finished.\n"
+    fi
+
+    # Post installation message
+    case $mode in
+        http )
+            printf "
+IMPORTANT: Your EspoCRM instance is working in HTTP mode.
+If you want to install with SSL/TLS certificate, use \"--ssl\" option. For more details, please visit https://docs.espocrm.com/administration/installation-by-script#installation-with-ssltls-certificate.
+"
+            ;;
+
+        ssl )
+            printf "
+IMPORTANT: Your EspoCRM instance is working in insecure mode with a self-signed certificate.
+You have to setup your own SSL/TLS certificates. For more details, please visit https://docs.espocrm.com/administration/installation-by-script#2-own-ssltls-certificate.
+"
+            ;;
+    esac
+
+    printf "
+Login data/information to your EspoCRM instance:
+URL: ${data[url]}
+Username: ${data[adminUsername]}
+Password: ${data[adminPassword]}
+"
+
+    printf "\nYour instance files are located at: \"${data[homeDirectory]}\".\n"
+}
+
+actionCommand() {
+    downloadSourceFiles
+
+    if [ ! -f "${data[homeDirectory]}/command.sh" ]; then
+        printExitError "EspoCRM directory is not found."
+    fi
+
+    cp ./espocrm-installer/commands/command.sh "${data[homeDirectory]}/command.sh"
+}
+
+#---------------------------------------
+
 scriptDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
 operatingSystem=$(getOs)
 
 handleArguments "$@"
 
-if [ -z "$noConfirmation" ]; then
-    printf "This script will install EspoCRM with all the needed prerequisites (including Docker, Docker-compose, Nginx, PHP, MySQL).\n"
+# run an action
 
-    isConfirmed=$(promptConfirmation "Do you want to continue the installation? [y/n] ")
-    if [ "$isConfirmed" != true ]; then
-        stopProcess
-    fi
-fi
+case "${data[action]}" in
+    main )
+        actionMain
+        ;;
 
-handleExistingInstallation
-
-normalizePreInstallationMode
-
-handlePreInstallationMode "$preInstallationMode"
-handleInstallationMode "$installationMode"
-
-mode=$(getInstalltionMode)
-
-normalizeData
-
-if [ -z "$noConfirmation" ]; then
-    displaySummaryInformation
-fi
-
-checkFixSystemRequirements "$operatingSystem"
-
-cleanTemporaryFiles
-
-download https://github.com/espocrm/espocrm-installer/archive/refs/heads/master.zip "espocrm-installer-master.zip"
-unzip -q "espocrm-installer-master.zip"
-
-if [ ! -d "./espocrm-installer-master" ]; then
-    printExitError "Unable to load required files."
-fi
-
-cd "espocrm-installer-master"
-
-# Check and configure a system
-case $(getOs) in
-    ubuntu | debian | mint )
-        runShellScript "system-configuration/debian.sh"
+    command )
+        actionCommand
         ;;
 
     * )
-        printExitError "Your OS is not supported by the script. We recommend to use Ubuntu server."
+        printExitError "Unknown action \"{data[action]}\"."
         ;;
 esac
-
-case $mode in
-    http | ssl | letsencrypt )
-        declare -a params
-        createParamsFromData
-        runShellScript "installation-modes/$mode/init.sh" "${params[@]}"
-        ;;
-
-    * )
-        printExitError "Unknown installation mode \"$mode\"."
-        ;;
-esac
-
-# Prepare docker
-prepareDocker
-
-# Run Docker
-runDocker
-
-printf "\n\n"
-
-if [ "$runDockerResult" = true ]; then
-    printf "The installation has been successfully completed.\n"
-else
-    printf "Installation is finished.\n"
-fi
-
-# Post installation message
-case $mode in
-    http )
-        printf "
-IMPORTANT: Your EspoCRM instance is working in HTTP mode.
-If you want to install with SSL/TLS certificate, use \"--ssl\" option. For more details, please visit https://docs.espocrm.com/administration/installation-by-script#installation-with-ssltls-certificate.
-"
-        ;;
-
-    ssl )
-        printf "
-IMPORTANT: Your EspoCRM instance is working in insecure mode with a self-signed certificate.
-You have to setup your own SSL/TLS certificates. For more details, please visit https://docs.espocrm.com/administration/installation-by-script#2-own-ssltls-certificate.
-"
-        ;;
-esac
-
-printf "
-Login data/information to your EspoCRM instance:
-  URL: ${data[url]}
-  Username: ${data[adminUsername]}
-  Password: ${data[adminPassword]}
-"
-
-printf "\nYour instance files are located at: \"${data[homeDirectory]}\".\n"
 
 cleanTemporaryFiles
