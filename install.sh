@@ -382,6 +382,7 @@ function rebaseInstallation() {
         return
     fi
 
+    printf "\n"
     printf "Starting the reinstallation process...\n"
 
     normalizeActualInstalledData
