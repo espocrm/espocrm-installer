@@ -85,11 +85,13 @@ function actionBackup() {
 
     echo "Creating a backup..."
 
-    mkdir -p "${backupDirectory}"
+    mkdir -p "${backupPath}" || {
+        exit 1
+    }
 
-    cp -rp "${homeDirectory}"/* "${backupDirectory}"
+    cp -rp "${homeDirectory}"/* "${backupPath}"
 
-    echo "Backup is created: $backupDirectory"
+    echo "Backup is created: $backupPath"
 }
 
 espocrmDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
