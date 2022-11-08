@@ -375,6 +375,25 @@ function cleanInstallation() {
     rm -rf "${data[homeDirectory]}"
 }
 
+function rebaseInstallation() {
+    local isRebase=${rebaseInstallation:-false}
+
+    if [ "$isRebase" != true ]; then
+        return
+    fi
+
+    printf "Starting the reinstallation process...\n"
+
+    normalizeActualInstalledData
+
+    backupActualInstallation
+
+    docker-compose -f "${data[homeDirectory]}/docker-compose.yml" down
+
+    rm -rf "${data[homeDirectory]}/data/${data[server]}"
+    rm "${data[homeDirectory]}/docker-compose.yml"
+}
+
 function cleanTemporaryFiles() {
     if [ -f "${scriptDirectory}/espocrm-installer-master.zip" ]; then
         rm "${scriptDirectory}/espocrm-installer-master.zip"
@@ -549,23 +568,15 @@ function handleExistingInstallation {
 
     printf "\n"
     printf "The installed EspoCRM instance is found.\n"
-    printf "Starting the reinstallation process...\n"
-
-    normalizeActualInstalledData
 
     case "$(getActualInstalledMode)" in
         http | letsencrypt | ssl )
             preInstallationMode=2
-            backupActualInstallation
-
-            docker-compose -f "${data[homeDirectory]}/docker-compose.yml" down
-
-            rm -rf "${data[homeDirectory]}/data/${data[server]}"
-            rm "${data[homeDirectory]}/docker-compose.yml"
+            rebaseInstallation=true
             ;;
 
         * )
-            printExitError "Unable to start the reinstallation process. If you want to start a clean installation with losing your data, use \"--clean\" option."
+            printExitError "Unable to determine the current installation mode. If you want to start a clean installation with losing your data, use \"--clean\" option."
             ;;
     esac
 }
@@ -777,6 +788,8 @@ function actionMain() {
     if [ -z "$noConfirmation" ]; then
         displaySummaryInformation
     fi
+
+    rebaseInstallation
 
     checkFixSystemRequirements "$operatingSystem"
 
