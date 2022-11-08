@@ -801,7 +801,9 @@ function actionMain() {
     if [ "$runDockerResult" = true ]; then
         printf "The installation has been successfully completed.\n"
     else
-        printf "Installation is finished.\n"
+        printf "The installation process is still in progress due to low server performance.\n"
+        printf " - In order to check the process, run: ${data[homeDirectory]}/command.sh logs\n"
+        printf " - In order to cancel the process, run: ${data[homeDirectory]}/command.sh stop\n"
     fi
 
     # Post installation message
