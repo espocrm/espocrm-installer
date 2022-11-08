@@ -16,6 +16,7 @@ function actionHelp() {
     printf "  rebuild     Run EspoCRM rebuild\n"
     printf "  upgrade     Upgrade all EspoCRM services\n"
     printf "  clean       Remove old and unused data\n"
+    printf "  logs        See the EspoCRM container logs\n"
     printf "  help        Information about the commands\n"
 }
 
@@ -65,6 +66,10 @@ function actionClean() {
     docker image prune -f
 }
 
+function actionLogs() {
+    docker logs espocrm
+}
+
 espocrmDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 action=${1:-help}
@@ -105,5 +110,9 @@ case "$action" in
 
     clean)
         actionClean
+        ;;
+
+    logs)
+        actionLogs
         ;;
 esac
