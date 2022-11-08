@@ -141,6 +141,6 @@ case "$action" in
         ;;
 
     backup)
-        actionBackup
+        actionBackup "$option"
         ;;
 esac
