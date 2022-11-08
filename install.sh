@@ -356,13 +356,15 @@ function backupActualInstallation {
         return
     fi
 
+    echo "Creating a backup..."
+
     backupDirectory=$(getBackupDirectory)
 
     mkdir -p "${backupDirectory}"
 
     cp -rp "${data[homeDirectory]}"/* "${backupDirectory}"
 
-    echo "Backup created: $backupDirectory"
+    echo "Backup is created: $backupDirectory"
 
     if [ "$withRemoval" = true ]; then
         rm -rf "${data[homeDirectory]}"
@@ -697,7 +699,7 @@ runDockerDatabase() {
     local dbUser=$(getYamlValue "MYSQL_USER" espocrm-mysql)
     local dbPass=$(getYamlValue "MYSQL_PASSWORD" espocrm-mysql)
 
-    for i in {1..24}
+    for i in {1..36}
     do
         docker exec -i espocrm-mysql mysql --user="$dbUser" --password="$dbPass" -e "SHOW DATABASES;" > /dev/null 2>&1 && break
 
@@ -866,7 +868,13 @@ actionCommand() {
         printExitError "EspoCRM directory is not found."
     fi
 
-    cp ./espocrm-installer-master/commands/command.sh "${data[homeDirectory]}/command.sh"
+    backupActualInstallation
+
+    cp ./espocrm-installer-master/commands/command.sh "${data[homeDirectory]}/command.sh" || {
+        printExitError "Unable to update the ${data[homeDirectory]}/command.sh"
+    }
+
+    echo "Done"
 }
 
 #---------------------------------------
