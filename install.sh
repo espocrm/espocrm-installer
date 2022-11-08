@@ -739,8 +739,8 @@ function runDocker() {
         printf "."
 
         if [ $i -eq 61 ]; then
-            printf "\n\nYour server is running slow.\n"
-            printf "In 90%% the process is faster. You have to wait 5 more minutes.\n"
+            printf "\n\nYour server is running slow. In 90%% the process is faster.\n"
+            printf "You have to wait 5 more minutes.\n"
         fi
 
         sleep 5
