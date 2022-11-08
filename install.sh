@@ -877,8 +877,6 @@ actionCommand() {
         printExitError "EspoCRM directory is not found."
     fi
 
-    backupActualInstallation
-
     cp ./espocrm-installer-master/commands/command.sh "${data[homeDirectory]}/command.sh" || {
         printExitError "Unable to update the ${data[homeDirectory]}/command.sh"
     }
