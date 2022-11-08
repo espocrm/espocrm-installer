@@ -59,7 +59,7 @@ function actionBuild() {
 }
 
 function actionUpgrade() {
-    docker-compose pull -f "$espocrmDirectory/docker-compose.yml"
+    docker-compose -f "$espocrmDirectory/docker-compose.yml" pull
     docker-compose -f "$espocrmDirectory/docker-compose.yml" up -d
 }
 
@@ -129,7 +129,7 @@ case "$action" in
         ;;
 
     upgrade )
-        actionUpgrade
+        actionUpgrade "$option"
         ;;
 
     clean )
