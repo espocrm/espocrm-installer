@@ -350,8 +350,6 @@ function getBackupDirectory() {
 }
 
 function backupActualInstallation {
-    local withRemoval=${1:-false}
-
     if [ ! -d "${data[homeDirectory]}" ]; then
         return
     fi
@@ -365,21 +363,16 @@ function backupActualInstallation {
     cp -rp "${data[homeDirectory]}"/* "${backupDirectory}"
 
     echo "Backup is created: $backupDirectory"
-
-    if [ "$withRemoval" = true ]; then
-        rm -rf "${data[homeDirectory]}"
-    fi
 }
 
 function cleanInstallation() {
     printf "Cleaning the previous installation...\n"
 
-    if [ "$(docker ps -aqf "name=espocrm")" ]; then
-        docker stop $(docker ps -aqf "name=espocrm") > /dev/null 2>&1
-        docker rm $(docker ps -aqf "name=espocrm") > /dev/null 2>&1
-    fi
+    docker-compose -f "${data[homeDirectory]}/docker-compose.yml" down
 
-    backupActualInstallation true
+    backupActualInstallation
+
+    rm -rf "${data[homeDirectory]}"
 }
 
 function cleanTemporaryFiles() {
