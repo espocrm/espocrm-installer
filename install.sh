@@ -539,6 +539,8 @@ function handleExistingInstallation {
             preInstallationMode=2
             backupActualInstallation
 
+            docker-compose -f "${data[homeDirectory]}/docker-compose.yml" down
+
             rm -rf "${data[homeDirectory]}/data/${data[server]}"
             rm "${data[homeDirectory]}/docker-compose.yml"
             ;;
