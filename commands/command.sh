@@ -100,47 +100,47 @@ action=${1:-help}
 option=${2:-}
 
 case "$action" in
-    help)
+    help )
         actionHelp
         ;;
 
-    rebuild)
+    rebuild )
         actionRebuild
         ;;
 
-    restart)
+    restart )
         actionRestart "$option"
         ;;
 
-    start)
+    start )
         actionStart "$option"
         ;;
 
-    status)
+    status )
         actionStatus
         ;;
 
-    stop)
+    stop )
         actionStop "$option"
         ;;
 
-    build)
+    build )
         actionBuild
         ;;
 
-    upgrade)
+    upgrade )
         actionUpgrade
         ;;
 
-    clean)
+    clean )
         actionClean
         ;;
 
-    logs)
+    logs )
         actionLogs
         ;;
 
-    backup)
+    backup )
         actionBackup "$option"
         ;;
 esac
