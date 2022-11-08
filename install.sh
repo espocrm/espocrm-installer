@@ -62,6 +62,7 @@ declare -A data=(
     [adminPassword]=$(openssl rand -hex 6)
     [homeDirectory]="/var/www/espocrm"
     [action]="main"
+    [backupPath]="SCRIPT_DIRECTORY/espocrm-backup"
 )
 
 declare -A modes=(
@@ -129,6 +130,10 @@ function handleArguments() {
 
             --command)
                 data[action]="command"
+                ;;
+
+            --backup-path)
+                data[backupPath]="${value}"
                 ;;
         esac
     done
@@ -335,6 +340,15 @@ function checkFixSystemRequirements() {
     esac
 }
 
+function getBackupDirectory() {
+    local backupPath="${data[backupPath]}"
+
+    backupPath=${backupPath//SCRIPT_DIRECTORY/$scriptDirectory}
+    backupPath=${backupPath%/}
+
+    echo "${backupPath}/$(date +'%Y-%m-%d_%H%M%S')"
+}
+
 function backupActualInstallation {
     local withRemoval=${1:-false}
 
@@ -342,7 +356,8 @@ function backupActualInstallation {
         return
     fi
 
-    backupDirectory="${scriptDirectory}/espocrm-backup/$(date +'%Y-%m-%d_%H%M%S')"
+    backupDirectory=$(getBackupDirectory)
+
     mkdir -p "${backupDirectory}"
 
     cp -rp "${data[homeDirectory]}"/* "${backupDirectory}"
