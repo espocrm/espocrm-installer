@@ -389,6 +389,8 @@ function rebaseInstallation() {
 
     backupActualInstallation
 
+    printf "\n"
+
     docker-compose -f "${data[homeDirectory]}/docker-compose.yml" down
 
     rm -rf "${data[homeDirectory]}/data/${data[server]}"
