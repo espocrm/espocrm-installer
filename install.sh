@@ -660,7 +660,32 @@ function prepareDocker() {
     fi
 }
 
+runDockerDatabase() {
+    docker-compose -f "${data[homeDirectory]}/docker-compose.yml" up -d espocrm-mysql || {
+        restoreBackup
+        exit 1
+    }
+
+    printf "\nWaiting for the database ready.\n"
+
+    local dbUser=$(getYamlValue "MYSQL_USER" espocrm-mysql)
+    local dbPass=$(getYamlValue "MYSQL_PASSWORD" espocrm-mysql)
+
+    for i in {1..24}
+    do
+        docker exec -i espocrm-mysql mysql --user="$dbUser" --password="$dbPass" -e "SHOW DATABASES;" > /dev/null 2>&1 && break
+
+        printf "."
+
+        sleep 5
+    done
+
+    printf "\n"
+}
+
 function runDocker() {
+    runDockerDatabase
+
     docker-compose -f "${data[homeDirectory]}/docker-compose.yml" up -d || {
         restoreBackup
         exit 1
@@ -669,7 +694,7 @@ function runDocker() {
     printf "\nWaiting for the first-time EspoCRM configuration.\n"
     printf "This may take up to 5 minutes.\n"
 
-    for i in {1..60}
+    for i in {1..120}
     do
         if [ $(curl -sfkLI "${data[url]}" --resolve "${data[domain]}:${data[httpPort]}:127.0.0.1" -o /dev/null -w '%{http_code}\n') == "200" ]; then
             runDockerResult=true
@@ -677,6 +702,11 @@ function runDocker() {
         fi
 
         printf "."
+
+        if [ $i -eq 61 ]; then
+            printf "\nYour server is running slow. In 90% the process is faster. You have to wait 5 more minutes.\n"
+        fi
+
         sleep 5
     done
 
