@@ -17,6 +17,7 @@ function actionHelp() {
     printf "  upgrade     Upgrade all EspoCRM services\n"
     printf "  clean       Remove old and unused data\n"
     printf "  logs        See the EspoCRM container logs\n"
+    printf "  backup      Backup all EspoCRM services\n"
     printf "  help        Information about the commands\n"
 }
 
@@ -70,6 +71,27 @@ function actionLogs() {
     docker logs espocrm
 }
 
+function actionBackup() {
+    local homeDirectory="/var/www/espocrm"
+    local backupPath=${1:-"/var/www/espocrm-backup"}
+
+    backupPath=${backupPath%/}
+    backupPath="${backupPath}/$(date +'%Y-%m-%d_%H%M%S')"
+
+    if [ ! -f "${homeDirectory}/docker-compose.yml" ]; then
+        echo "Error: The EspoCRM is not found."
+        exit 1
+    fi
+
+    echo "Creating a backup..."
+
+    mkdir -p "${backupDirectory}"
+
+    cp -rp "${homeDirectory}"/* "${backupDirectory}"
+
+    echo "Backup is created: $backupDirectory"
+}
+
 espocrmDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 action=${1:-help}
@@ -114,5 +136,9 @@ case "$action" in
 
     logs)
         actionLogs
+        ;;
+
+    backup)
+        actionBackup
         ;;
 esac
