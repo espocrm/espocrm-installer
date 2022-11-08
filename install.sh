@@ -9,15 +9,24 @@
 set -e
 
 function printExitError() {
-    local messsage="$1"
+    local message="$1"
+
+    restoreBackup
+
+    printf "\n"
+    printRedMessage "ERROR"
+    printf ": ${message}\n"
+
+    exit 1
+}
+
+printRedMessage() {
+    local message="$1"
 
     local red='\033[0;31m'
     local default='\033[0m'
 
-    restoreBackup
-
-    printf "\n${red}ERROR${default}: ${messsage}\n"
-    exit 1
+    printf "${red}${message}${default}"
 }
 
 function restoreBackup() {
@@ -707,7 +716,7 @@ function runDocker() {
 
         if [ $i -eq 61 ]; then
             printf "\n\nYour server is running slow.\n"
-            printf "In 90\% the process is faster. You have to wait 5 more minutes.\n"
+            printf "In 90%% the process is faster. You have to wait 5 more minutes.\n"
         fi
 
         sleep 5
@@ -801,9 +810,11 @@ function actionMain() {
     if [ "$runDockerResult" = true ]; then
         printf "The installation has been successfully completed.\n"
     else
-        printf "The installation process is still in progress due to low server performance.\n"
-        printf " - In order to check the process, run: ${data[homeDirectory]}/command.sh logs\n"
-        printf " - In order to cancel the process, run: ${data[homeDirectory]}/command.sh stop\n"
+        printRedMessage "The installation process is still in progress due to low server performance.\n"
+        printf " - In order to check the process, run:\n"
+        printf "   ${data[homeDirectory]}/command.sh logs\n"
+        printf " - In order to cancel the process, run:\n"
+        printf "   ${data[homeDirectory]}/command.sh stop\n"
     fi
 
     # Post installation message
