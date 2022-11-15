@@ -89,7 +89,10 @@ function actionBackup() {
         exit 1
     }
 
-    tar -czf "${backupFilePath}" -C "${homeDirectory}" . --exclude="access.log"
+    tar --exclude="*.log" -czf "${backupFilePath}" "${homeDirectory}" . || {
+        echo "Error: Cannot create an archive."
+        exit 1
+    }
 
     echo "Backup is created: ${backupFilePath}"
 }
