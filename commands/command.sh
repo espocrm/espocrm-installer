@@ -76,7 +76,7 @@ function actionBackup() {
     local backupPath=${1:-"/var/www/espocrm-backup"}
 
     backupPath=${backupPath%/}
-    backupPath="${backupPath}/$(date +'%Y-%m-%d_%H%M%S')"
+    backupFilePath="${backupPath}/$(date +'%Y-%m-%d_%H%M%S').tar.gz"
 
     if [ ! -f "${homeDirectory}/docker-compose.yml" ]; then
         echo "Error: The EspoCRM is not found."
@@ -89,9 +89,9 @@ function actionBackup() {
         exit 1
     }
 
-    cp -rp "${homeDirectory}"/* "${backupPath}"
+    tar -czf "${backupFilePath}" -C "${homeDirectory}" . # dot is important
 
-    echo "Backup is created: $backupPath"
+    echo "Backup is created: ${backupFilePath}"
 }
 
 espocrmDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
