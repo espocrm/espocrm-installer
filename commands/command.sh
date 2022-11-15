@@ -89,7 +89,7 @@ function actionBackup() {
         exit 1
     }
 
-    tar -czf "${backupFilePath}" -C "${homeDirectory}" . # dot is important
+    tar -czf "${backupFilePath}" -C "${homeDirectory}" . --exclude="access.log"
 
     echo "Backup is created: ${backupFilePath}"
 }
