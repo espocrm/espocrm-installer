@@ -38,11 +38,11 @@ function actionRestart() {
 
 function actionStart() {
     if [ -n "$1" ]; then
-        docker-compose -f "$espocrmDirectory/docker-compose.yml" up -d "$1"
+        docker-compose -f "$homeDirectory/docker-compose.yml" up -d "$1"
         return
     fi
 
-    docker-compose -f "$espocrmDirectory/docker-compose.yml" up -d
+    docker-compose -f "$homeDirectory/docker-compose.yml" up -d
 }
 
 function actionStatus() {
@@ -50,17 +50,17 @@ function actionStatus() {
 }
 
 function actionStop() {
-    docker-compose -f "$espocrmDirectory/docker-compose.yml" down
+    docker-compose -f "$homeDirectory/docker-compose.yml" down
 }
 
 function actionBuild() {
-    docker-compose -f "$espocrmDirectory/docker-compose.yml" up -d --build "$@"
+    docker-compose -f "$homeDirectory/docker-compose.yml" up -d --build "$@"
     docker-compose up --build -d
 }
 
 function actionUpgrade() {
-    docker-compose -f "$espocrmDirectory/docker-compose.yml" pull
-    docker-compose -f "$espocrmDirectory/docker-compose.yml" up -d
+    docker-compose -f "$homeDirectory/docker-compose.yml" pull
+    docker-compose -f "$homeDirectory/docker-compose.yml" up -d
 }
 
 function actionClean() {
@@ -72,7 +72,6 @@ function actionLogs() {
 }
 
 function actionBackup() {
-    local homeDirectory="/var/www/espocrm"
     local backupPath=${1:-"/var/www/espocrm-backup"}
 
     backupPath=${backupPath%/}
@@ -97,7 +96,7 @@ function actionBackup() {
     echo "Backup is created: ${backupFilePath}"
 }
 
-espocrmDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
+homeDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 action=${1:-help}
 option=${2:-}
