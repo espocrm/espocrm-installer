@@ -18,7 +18,31 @@ function actionHelp() {
     printf "  clean       Remove old and unused data\n"
     printf "  logs        See the EspoCRM container logs\n"
     printf "  backup      Backup all EspoCRM services\n"
+    printf "  restore     Restore the backup\n"
     printf "  help        Information about the commands\n"
+}
+
+function promptConfirmation() {
+    local text=$1
+
+    read -p "${text}" choice
+
+    case "$choice" in
+        y|Y|yes|YES )
+            echo true
+            return
+            ;;
+    esac
+
+    echo false
+}
+
+function availableSpace() {
+    df -k --output=avail "$homeDirectory" | tail -n1
+}
+
+function usedSpace() {
+    du -s "$homeDirectory" | awk '{print $1}'
 }
 
 function actionRebuild() {
@@ -88,12 +112,67 @@ function actionBackup() {
         exit 1
     }
 
+    local usedSpace=$(usedSpace)
+    local freeSpace=$(freeSpace)
+
+    if [[ $freeSpace -lt $usedSpace ]]; then
+        echo "Error: Insufficient disk space."
+        exit 1
+    fi;
+
     tar --exclude="*.log" -czf "${backupFilePath}" "${homeDirectory}" . || {
         echo "Error: Cannot create an archive."
         exit 1
     }
 
     echo "Backup is created: ${backupFilePath}"
+}
+
+function actionRestore() {
+    local backupFile=${1:-}
+
+    if [ -z "$backupFile" ]; then
+        echo "Error: Backup file is not specified."
+        exit 1
+    fi
+
+    if [ ! -f "$backupFile" ]; then
+        echo "Error: The backup file \"${backupFile}\" is not found."
+        exit 1
+    fi
+
+    local backupFileName=$(basename "$backupFile")
+
+    local isConfirmed=$(promptConfirmation "All current data will be DELETED and will be restored with the \"${backupFileName}\" backup. Do you want to continue? [y/n] ")
+
+    if [ "$isConfirmed" != true ]; then
+        echo "Canceled"
+        exit 0
+    fi
+
+    local freeSpace=$(freeSpace)
+    local usedSpace=$(usedSpace)
+    usedSpace=$(( 2*usedSpace ))
+
+    if [[ $freeSpace -lt $usedSpace ]]; then
+        echo "Error: Insufficient disk space."
+        exit 1
+    fi;
+
+    actionStop
+
+    mv "${homeDirectory}" "${homeDirectory}_OLD"
+
+    tar -xzf "$backupFile" -C "$homeDirectory" || {
+        echo "Error: Permission denied to restore the backup."
+        mv "${homeDirectory}_OLD" "${homeDirectory}"
+        actionStart
+        exit 1
+    }
+
+    actionStart
+
+    echo "Done"
 }
 
 homeDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
@@ -144,5 +223,9 @@ case "$action" in
 
     backup )
         actionBackup "$option"
+        ;;
+
+    restore )
+        actionRestore "$option"
         ;;
 esac
