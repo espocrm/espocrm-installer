@@ -104,7 +104,7 @@ function actionBackup() {
     backupFilePath="${backupPath}/$(date +'%Y-%m-%d_%H%M%S').tar.gz"
 
     if [ ! -f "${homeDirectory}/docker-compose.yml" ]; then
-        echo "Error: The EspoCRM is not found."
+        echo "ERROR: The EspoCRM is not found."
         exit 1
     fi
 
@@ -118,7 +118,7 @@ function actionBackup() {
     local freeSpace=$(freeSpace)
 
     if [[ $freeSpace -lt $usedSpace ]]; then
-        echo "Error: Insufficient disk space."
+        echo "ERROR: Insufficient disk space."
         exit 1
     fi
 
@@ -126,7 +126,7 @@ function actionBackup() {
         local errorCode=$?
 
         if [ "$errorCode" != "1" ] && [ "$errorCode" != "0" ]; then
-            echo "Error: Unable to create an archive, error code: $errorCode."
+            echo "ERROR: Unable to create an archive, error code: $errorCode."
             exit 1
         fi
     }
@@ -138,18 +138,20 @@ function actionRestore() {
     local backupFile=${1:-}
 
     if [ -z "$backupFile" ]; then
-        echo "Error: Backup file is not specified."
+        echo "ERROR: Backup file is not specified."
         exit 1
     fi
 
     if [ ! -f "$backupFile" ]; then
-        echo "Error: The backup file \"${backupFile}\" is not found."
+        echo "ERROR: The backup file \"${backupFile}\" is not found."
         exit 1
     fi
 
     local backupFileName=$(basename "$backupFile")
 
-    local isConfirmed=$(promptConfirmation "All current data will be DELETED and will be restored with the \"${backupFileName}\" backup. Do you want to continue? [y/n] ")
+    echo "All current data will be DELETED and restored with the \"${backupFileName}\" backup."
+
+    local isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
 
     if [ "$isConfirmed" != true ]; then
         echo "Canceled"
@@ -161,7 +163,7 @@ function actionRestore() {
     usedSpace=$(( 2*usedSpace ))
 
     if [[ $freeSpace -lt $usedSpace ]]; then
-        echo "Error: Insufficient disk space."
+        echo "ERROR: Insufficient disk space."
         exit 1
     fi;
 
@@ -169,14 +171,22 @@ function actionRestore() {
 
     mv "${homeDirectory}" "${homeDirectory}_OLD"
 
-    tar -xzf "$backupFile" -C "$homeDirectory" || {
-        echo "Error: Permission denied to restore the backup."
+    mkdir -p "${homeDirectory}"
+
+    tar -xzf "$backupFile" -C "${homeDirectory}" || {
+        printf "ERROR: Permission denied to restore the backup.\n\n"
+
+        echo "Restoring the previous data..."
+
+        rm -rf "${homeDirectory}"
         mv "${homeDirectory}_OLD" "${homeDirectory}"
         actionStart
         exit 1
     }
 
     actionStart
+
+    rm -rf "${homeDirectory}_OLD"
 
     echo "Done"
 }
