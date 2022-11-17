@@ -169,6 +169,8 @@ function actionRestore() {
 
     actionStop
 
+    rm -rf "${homeDirectory}_OLD"
+
     mv "${homeDirectory}" "${homeDirectory}_OLD"
 
     mkdir -p "${homeDirectory}"
