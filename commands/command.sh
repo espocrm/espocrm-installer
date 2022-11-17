@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if ! [ $(id -u) = 0 ]; then
     printf "ERROR: This script should be run as root or with sudo.\n"
     exit 1
@@ -37,7 +39,7 @@ function promptConfirmation() {
     echo false
 }
 
-function availableSpace() {
+function freeSpace() {
     df -k --output=avail "$homeDirectory" | tail -n1
 }
 
@@ -118,11 +120,15 @@ function actionBackup() {
     if [[ $freeSpace -lt $usedSpace ]]; then
         echo "Error: Insufficient disk space."
         exit 1
-    fi;
+    fi
 
-    tar --exclude="*.log" -czf "${backupFilePath}" "${homeDirectory}" . || {
-        echo "Error: Cannot create an archive."
-        exit 1
+    tar --warning=no-file-changed --exclude="*.log" -czf "${backupFilePath}" -C "${homeDirectory}" . > /dev/null 2>&1 || {
+        local errorCode=$?
+
+        if [ "$errorCode" != "1" ] && [ "$errorCode" != "0" ]; then
+            echo "Error: Unable to create an archive, error code: $errorCode."
+            exit 1
+        fi
     }
 
     echo "Backup is created: ${backupFilePath}"
