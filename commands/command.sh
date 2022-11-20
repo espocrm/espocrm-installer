@@ -21,6 +21,7 @@ function actionHelp() {
     printf "  logs        See the EspoCRM container logs\n"
     printf "  backup      Backup all EspoCRM services\n"
     printf "  restore     Restore the backup\n"
+    printf "  import-sql  Import database data by SQL dump\n"
     printf "  help        Information about the commands\n"
 }
 
@@ -45,6 +46,15 @@ function freeSpace() {
 
 function usedSpace() {
     du -s "$homeDirectory" | awk '{print $1}'
+}
+
+function getYamlValue {
+    local keyName="$1"
+    local category="$2"
+
+    if [ -f "${homeDirectory}/docker-compose.yml" ]; then
+        sed -n "/${category}:/,/networks:/p" "${homeDirectory}/docker-compose.yml" | grep -oP "(?<=${keyName}: ).*" | head -1
+    fi
 }
 
 function actionRebuild() {
@@ -76,6 +86,11 @@ function actionStatus() {
 }
 
 function actionStop() {
+    if [ -n "$1" ]; then
+        docker-compose -f "$homeDirectory/docker-compose.yml" down "$1"
+        return
+    fi
+
     docker-compose -f "$homeDirectory/docker-compose.yml" down
 }
 
@@ -150,6 +165,7 @@ function actionRestore() {
     local backupFileName=$(basename "$backupFile")
 
     echo "All current data will be DELETED and restored with the \"${backupFileName}\" backup."
+    echo "The backup is required. Use: ${homeDirectory}/command.sh --backup"
 
     local isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
 
@@ -189,6 +205,67 @@ function actionRestore() {
     actionStart
 
     rm -rf "${homeDirectory}_OLD"
+
+    echo "Done"
+}
+
+function actionImportSql() {
+    local sqlFile=${1:-}
+
+    if [ -z "$sqlFile" ]; then
+        echo "ERROR: SQL file is not specified."
+        exit 1
+    fi
+
+    if [ ! -f "$sqlFile" ]; then
+        echo "ERROR: The SQL file \"${sqlFile}\" is not found."
+        exit 1
+    fi
+
+    local sqlFileName=$(basename "$sqlFile")
+    local sqlFileExtension="${sqlFileName##*.}"
+
+    if [ "$sqlFileExtension" != "sql" ]; then
+        echo "ERROR: The wrong file format. It should be unzipped .sql file."
+        exit 1
+    fi
+
+    echo "All current database data will be DELETED and imported with the \"${sqlFileName}\"."
+    echo "The backup is required. Use: ${homeDirectory}/command.sh --backup"
+
+    local isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
+
+    if [ "$isConfirmed" != true ]; then
+        echo "Canceled"
+        exit 0
+    fi
+
+    local freeSpace=$(freeSpace)
+    local usedSpace=$(usedSpace)
+    usedSpace=$(( 2*usedSpace ))
+
+    if [[ $freeSpace -lt $usedSpace ]]; then
+        echo "ERROR: Insufficient disk space."
+        exit 1
+    fi;
+
+    echo "Importing the database..."
+
+    local dbName=$(getYamlValue "MYSQL_DATABASE" espocrm-mysql)
+    local dbRootPass=$(getYamlValue "MYSQL_ROOT_PASSWORD" espocrm-mysql)
+
+    docker exec -i espocrm-mysql mysql --user=root --password="$dbRootPass" -e "DROP DATABASE $dbName; CREATE DATABASE $dbName;" > /dev/null 2>&1 || {
+        echo "ERROR: Unable to clean the database."
+        exit 1
+    }
+
+    docker exec -i espocrm-mysql mysql --user=root --password="$dbRootPass" "$dbName" < "$sqlFile" || {
+        echo "ERROR: Unable to import the database data."
+        echo "In order to restore your backup, use \"${homeDirectory}/command.sh --restore\"."
+        exit 1
+    }
+
+    actionRestart "espocrm-mysql"
 
     echo "Done"
 }
@@ -245,5 +322,9 @@ case "$action" in
 
     restore )
         actionRestore "$option"
+        ;;
+
+    import-sql )
+        actionImportSql "$option"
         ;;
 esac
