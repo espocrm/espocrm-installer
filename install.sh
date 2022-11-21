@@ -368,7 +368,7 @@ function backupActualInstallation {
 function cleanInstallation() {
     printf "Cleaning the previous installation...\n"
 
-    docker-compose -f "${data[homeDirectory]}/docker-compose.yml" down
+    docker compose -f "${data[homeDirectory]}/docker-compose.yml" down
 
     backupActualInstallation
 
@@ -391,7 +391,7 @@ function rebaseInstallation() {
 
     printf "\n"
 
-    docker-compose -f "${data[homeDirectory]}/docker-compose.yml" down
+    docker compose -f "${data[homeDirectory]}/docker-compose.yml" down
 
     rm -rf "${data[homeDirectory]}/data/${data[server]}"
     rm "${data[homeDirectory]}/docker-compose.yml"
@@ -696,7 +696,7 @@ function prepareDocker() {
 }
 
 runDockerDatabase() {
-    docker-compose -f "${data[homeDirectory]}/docker-compose.yml" up -d espocrm-mysql || {
+    docker compose -f "${data[homeDirectory]}/docker-compose.yml" up -d espocrm-mysql || {
         restoreBackup
         exit 1
     }
@@ -721,7 +721,7 @@ runDockerDatabase() {
 function runDocker() {
     runDockerDatabase
 
-    docker-compose -f "${data[homeDirectory]}/docker-compose.yml" up -d || {
+    docker compose -f "${data[homeDirectory]}/docker-compose.yml" up -d || {
         restoreBackup
         exit 1
     }

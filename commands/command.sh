@@ -63,20 +63,20 @@ function actionRebuild() {
 
 function actionRestart() {
     if [ -n "$1" ]; then
-        docker-compose -f "$homeDirectory/docker-compose.yml" restart "$1"
+        docker compose -f "$homeDirectory/docker-compose.yml" restart "$1"
         return
     fi
 
-    docker-compose -f "$homeDirectory/docker-compose.yml" restart
+    docker compose -f "$homeDirectory/docker-compose.yml" restart
 }
 
 function actionStart() {
     if [ -n "$1" ]; then
-        docker-compose -f "$homeDirectory/docker-compose.yml" up -d "$1"
+        docker compose -f "$homeDirectory/docker-compose.yml" up -d "$1"
         return
     fi
 
-    docker-compose -f "$homeDirectory/docker-compose.yml" up -d
+    docker compose -f "$homeDirectory/docker-compose.yml" up -d
 }
 
 function actionStatus() {
@@ -89,17 +89,17 @@ function actionStop() {
         return
     fi
 
-    docker-compose -f "$homeDirectory/docker-compose.yml" down
+    docker compose -f "$homeDirectory/docker-compose.yml" down
 }
 
 function actionBuild() {
-    docker-compose -f "$homeDirectory/docker-compose.yml" up -d --build "$@"
-    docker-compose up --build -d
+    docker compose -f "$homeDirectory/docker-compose.yml" up -d --build "$@"
+    docker compose up --build -d
 }
 
 function actionUpgrade() {
-    docker-compose -f "$homeDirectory/docker-compose.yml" pull
-    docker-compose -f "$homeDirectory/docker-compose.yml" up -d
+    docker compose -f "$homeDirectory/docker-compose.yml" pull
+    docker compose -f "$homeDirectory/docker-compose.yml" up -d
 }
 
 function actionClean() {
