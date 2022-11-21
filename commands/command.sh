@@ -170,7 +170,6 @@ function actionRestore() {
     fi
 
     echo "All current data will be DELETED and restored with the \"${backupFileName}\" backup."
-    echo "The backup is required. Use: ${homeDirectory}/command.sh --backup"
 
     local isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
 
