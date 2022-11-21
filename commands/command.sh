@@ -63,13 +63,11 @@ function actionRebuild() {
 
 function actionRestart() {
     if [ -n "$1" ]; then
-        actionStop "$1"
-        actionStart "$1"
+        docker-compose -f "$homeDirectory/docker-compose.yml" restart "$1"
         return
     fi
 
-    actionStop
-    actionStart
+    docker-compose -f "$homeDirectory/docker-compose.yml" restart
 }
 
 function actionStart() {
@@ -87,7 +85,7 @@ function actionStatus() {
 
 function actionStop() {
     if [ -n "$1" ]; then
-        docker-compose -f "$homeDirectory/docker-compose.yml" down "$1"
+        docker rm -f "$1"
         return
     fi
 
