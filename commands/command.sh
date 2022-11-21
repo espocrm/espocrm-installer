@@ -226,7 +226,7 @@ function actionImportSql() {
     local sqlFileExtension="${sqlFileName##*.}"
 
     if [ "$sqlFileExtension" != "sql" ]; then
-        echo "ERROR: The wrong file format. It should be unzipped .sql file."
+        echo "ERROR: File format is not recognized. It should be unzipped .sql file."
         exit 1
     fi
 
