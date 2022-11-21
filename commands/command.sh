@@ -164,6 +164,11 @@ function actionRestore() {
 
     local backupFileName=$(basename "$backupFile")
 
+    if [[ ! $backupFileName =~ \.tar\.gz$ ]]; then
+        echo "ERROR: File format is not recognized. It should be unzipped .tar.gz file."
+        exit 1
+    fi
+
     echo "All current data will be DELETED and restored with the \"${backupFileName}\" backup."
     echo "The backup is required. Use: ${homeDirectory}/command.sh --backup"
 
