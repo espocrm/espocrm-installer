@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# EspoCRM installer MASTER
+#
+# EspoCRM - Open Source CRM application.
+# Copyright (C) 2014-2022 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+# Website: https://www.espocrm.com
+
 set -e
 
 if ! [ $(id -u) = 0 ]; then
