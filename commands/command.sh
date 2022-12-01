@@ -166,7 +166,7 @@ function actionRestore() {
         exit 1
     fi
 
-    echo "All current data will be DELETED and restored with the \"${backupFileName}\" backup."
+    echo "All current data will be DELETED and RESTORED with the \"${backupFileName}\" backup."
 
     local isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
 
