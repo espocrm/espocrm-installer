@@ -94,7 +94,6 @@ function actionStop() {
 
 function actionBuild() {
     docker compose -f "$homeDirectory/docker-compose.yml" up -d --build "$@"
-    docker compose up --build -d
 }
 
 function actionUpgrade() {
