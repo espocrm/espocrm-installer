@@ -106,6 +106,8 @@ function actionUpgrade() {
 }
 
 function actionClean() {
+    docker exec -i espocrm php command.php run-job Cleanup
+
     docker image prune -f
 }
 
