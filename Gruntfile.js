@@ -83,6 +83,10 @@ module.exports = function (grunt) {
                     {
                         src: 'build/tmp/install.sh',
                         dest: 'build/tmp/install.sh'
+                    },
+                    {
+                        src: 'build/tmp/<%= pkg.name %>-<%= pkg.version %>/commands/command.sh',
+                        dest: 'build/tmp/<%= pkg.name %>-<%= pkg.version %>/commands/command.sh'
                     }
                 ]
             }
