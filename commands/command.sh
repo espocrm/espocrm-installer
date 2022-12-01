@@ -97,6 +97,10 @@ function actionBuild() {
 }
 
 function actionUpgrade() {
+    local backupPath=${1:-}
+
+    actionBackup "$backupPath"
+
     docker compose -f "$homeDirectory/docker-compose.yml" pull
     docker compose -f "$homeDirectory/docker-compose.yml" up -d
 }
