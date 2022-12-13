@@ -301,12 +301,23 @@ function isInstalled() {
         return
     fi
 
+    local isRunning=$(isServiceRunning)
+
+    echo "$isRunning"
+}
+
+function isServiceRunning() {
     if [ -x "$(command -v docker)" ] && [ "$(docker ps -aqf name=espocrm)" ]; then
         echo true
         return
     fi
 
     echo false
+}
+
+function forceServiceStop() {
+    docker stop $(docker ps -aqf "name=espocrm")
+    docker rm $(docker ps -aqf "name=espocrm")
 }
 
 function checkFixSystemRequirements() {
@@ -368,7 +379,13 @@ function backupActualInstallation {
 function cleanInstallation() {
     printf "Cleaning the previous installation...\n"
 
-    docker compose -f "${data[homeDirectory]}/docker-compose.yml" down
+    if [ -f "${data[homeDirectory]}/docker-compose.yml" ]; then
+        docker compose -f "${data[homeDirectory]}/docker-compose.yml" down
+    fi
+
+    if [ $(isServiceRunning) = true ]; then
+        forceServiceStop
+    fi
 
     backupActualInstallation
 
