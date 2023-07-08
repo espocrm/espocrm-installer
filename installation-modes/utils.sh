@@ -19,12 +19,12 @@ function handleParams() {
                 url="${value}"
                 ;;
 
-            --mysqlRootPassword)
-                mysqlRootPassword="${value}"
+            --dbRootPassword)
+                dbRootPassword="${value}"
                 ;;
 
-            --mysqlPassword)
-                mysqlPassword="${value}"
+            --dbPassword)
+                dbPassword="${value}"
                 ;;
 
             --adminUsername)
@@ -46,8 +46,8 @@ function prepareConfiguration() {
     declare -A values=(
         ["DOMAIN_NAME"]="$domain"
         ["ESPOCRM_SITE_URL"]="$url"
-        ["MYSQL_ROOT_PASSWORD"]="$mysqlRootPassword"
-        ["MYSQL_PASSWORD"]="$mysqlPassword"
+        ["DB_ROOT_PASSWORD"]="$dbRootPassword"
+        ["DB_PASSWORD"]="$dbPassword"
         ["ADMIN_USERNAME"]="$adminUsername"
         ["ADMIN_PASSWORD"]="$adminPassword"
         ["EMAIL"]="${email:-}"

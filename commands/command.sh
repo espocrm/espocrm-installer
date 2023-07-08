@@ -264,21 +264,21 @@ function actionImportSql() {
 
     echo "Importing the database..."
 
-    local dbName=$(getYamlValue "MYSQL_DATABASE" espocrm-mysql)
-    local dbRootPass=$(getYamlValue "MYSQL_ROOT_PASSWORD" espocrm-mysql)
+    local dbName=$(getYamlValue "MARIADB_DATABASE" espocrm-db)
+    local dbRootPass=$(getYamlValue "MARIADB_ROOT_PASSWORD" espocrm-db)
 
-    docker exec -i espocrm-mysql mysql --user=root --password="$dbRootPass" -e "DROP DATABASE $dbName; CREATE DATABASE $dbName;" > /dev/null 2>&1 || {
+    docker exec -i espocrm-db mariadb --user=root --password="$dbRootPass" -e "DROP DATABASE $dbName; CREATE DATABASE $dbName;" > /dev/null 2>&1 || {
         echo "ERROR: Unable to clean the database."
         exit 1
     }
 
-    docker exec -i espocrm-mysql mysql --user=root --password="$dbRootPass" "$dbName" < "$sqlFile" || {
+    docker exec -i espocrm-db mariadb --user=root --password="$dbRootPass" "$dbName" < "$sqlFile" || {
         echo "ERROR: Unable to import the database data."
         echo "In order to restore your backup, use \"${homeDirectory}/command.sh --restore\"."
         exit 1
     }
 
-    actionRestart "espocrm-mysql"
+    actionRestart "espocrm-db"
 
     echo "Done"
 }

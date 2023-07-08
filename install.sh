@@ -56,8 +56,8 @@ declare -A data=(
     [ssl]=false
     [owncertificate]=false
     [letsencrypt]=false
-    [mysqlRootPassword]=$(openssl rand -hex 10)
-    [mysqlPassword]=$(openssl rand -hex 10)
+    [dbRootPassword]=$(openssl rand -hex 10)
+    [dbPassword]=$(openssl rand -hex 10)
     [adminUsername]="admin"
     [adminPassword]=$(openssl rand -hex 6)
     [homeDirectory]="/var/www/espocrm"
@@ -112,12 +112,12 @@ function handleArguments() {
                 data[email]="${value}"
                 ;;
 
-            --mysqlRootPassword)
-                data[mysqlRootPassword]="${value}"
+            --dbRootPassword)
+                data[dbRootPassword]="${value}"
                 ;;
 
-            --mysqlPassword)
-                data[mysqlPassword]="${value}"
+            --dbPassword)
+                data[dbPassword]="${value}"
                 ;;
 
             --adminUsername)
@@ -427,8 +427,8 @@ function cleanTemporaryFiles() {
 function normalizeActualInstalledData() {
     declare -A currentData
 
-    currentData[mysqlRootPassword]=$(getYamlValue "MYSQL_ROOT_PASSWORD" "espocrm-mysql")
-    currentData[mysqlPassword]=$(getYamlValue "MYSQL_PASSWORD" "espocrm-mysql")
+    currentData[dbRootPassword]=$(getYamlValue "MARIADB_ROOT_PASSWORD" "espocrm-db")
+    currentData[dbPassword]=$(getYamlValue "MARIADB_PASSWORD" "espocrm-db")
     currentData[adminUsername]=$(getYamlValue "ESPOCRM_ADMIN_USERNAME" "espocrm")
     currentData[adminPassword]=$(getYamlValue "ESPOCRM_ADMIN_PASSWORD" "espocrm")
 
@@ -713,19 +713,19 @@ function prepareDocker() {
 }
 
 runDockerDatabase() {
-    docker compose -f "${data[homeDirectory]}/docker-compose.yml" up -d espocrm-mysql || {
+    docker compose -f "${data[homeDirectory]}/docker-compose.yml" up -d espocrm-db || {
         restoreBackup
         exit 1
     }
 
     printf "\nWaiting for the database ready.\n"
 
-    local dbUser=$(getYamlValue "MYSQL_USER" espocrm-mysql)
-    local dbPass=$(getYamlValue "MYSQL_PASSWORD" espocrm-mysql)
+    local dbUser=$(getYamlValue "MARIADB_USER" espocrm-db)
+    local dbPass=$(getYamlValue "MARIADB_PASSWORD" espocrm-db)
 
     for i in {1..36}
     do
-        docker exec -i espocrm-mysql mysql --user="$dbUser" --password="$dbPass" -e "SHOW DATABASES;" > /dev/null 2>&1 && break
+        docker exec -i espocrm-db mariadb --user="$dbUser" --password="$dbPass" -e "SHOW DATABASES;" > /dev/null 2>&1 && break
 
         printf "."
 
@@ -786,7 +786,7 @@ function displaySummaryInformation() {
 
 function actionMain() {
     if [ -z "$noConfirmation" ]; then
-        printf "This script will install EspoCRM with all the needed prerequisites (including Docker, Docker-compose, Nginx, PHP, MySQL).\n"
+        printf "This script will install EspoCRM with all the needed prerequisites (including Docker, Docker-compose, Nginx, PHP, MariaDB).\n"
 
         isConfirmed=$(promptConfirmation "Do you want to continue the installation? [y/n] ")
         if [ "$isConfirmed" != true ]; then
