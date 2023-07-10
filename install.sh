@@ -786,7 +786,7 @@ function displaySummaryInformation() {
 
 function actionMain() {
     if [ -z "$noConfirmation" ]; then
-        printf "This script will install EspoCRM with all the needed prerequisites (including Docker, Docker-compose, Nginx, PHP, MariaDB).\n"
+        printf "This script will install EspoCRM with all the needed prerequisites (including Docker, Nginx, PHP, MariaDB).\n"
 
         isConfirmed=$(promptConfirmation "Do you want to continue the installation? [y/n] ")
         if [ "$isConfirmed" != true ]; then
