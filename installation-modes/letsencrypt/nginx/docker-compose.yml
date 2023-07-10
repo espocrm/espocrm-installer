@@ -22,6 +22,8 @@ services:
   espocrm-nginx:
     image: nginx
     container_name: espocrm-nginx
+    environment:
+      DOMAIN_NAME: "%%DOMAIN_NAME%%"
     restart: always
     depends_on:
       - espocrm
