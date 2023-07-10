@@ -23,7 +23,7 @@ services:
     image: nginx
     container_name: espocrm-nginx
     environment:
-      DOMAIN_NAME: "%%DOMAIN_NAME%%"
+      NGINX_HOST: "%%DOMAIN_NAME%%"
     restart: always
     depends_on:
       - espocrm
@@ -87,7 +87,7 @@ services:
       - espocrm
     entrypoint: docker-websocket.sh
     ports:
-      - 8080:8080
+      - "8080:8080"
     networks:
       - external
       - internal
