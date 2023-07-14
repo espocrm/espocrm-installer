@@ -637,8 +637,8 @@ function handleInstallationMode() {
     case "$mode" in
         1 )
             if [ -z "${data[email]}" ]; then
-                printf "\n"
-                read -p "Specify your email address to generate the Let's Encrypt certificate: " data[email]
+                printf "\nEnter your email address to generate the Let's Encrypt certificate:\n"
+                read data[email]
             fi
             ;;
 
@@ -652,9 +652,10 @@ function handleInstallationMode() {
                 data[domain]=$(getServerIp)
 
                 isIpAddress=$(isIpAddress "${data[domain]}")
+
                 if [ "$isIpAddress" != true ]; then
-                    printf "\n"
-                    read -p "Enter a domain name or IP for the future EspoCRM instance (e.g. 234.32.0.32 or espoexample.com)" data[domain]
+                    printf "\nEnter a domain name or IP for the future EspoCRM instance (e.g. 234.32.0.32 or espoexample.com):\n"
+                    read data[domain]
                 fi
             fi
             ;;
@@ -665,8 +666,8 @@ function handleInstallationMode() {
     esac
 
     if [ -z "${data[domain]}" ]; then
-        printf "\n"
-        read -p "Enter a domain name for the future EspoCRM instance (e.g. espoexample.com): " data[domain]
+        printf "\nEnter a domain name for the future EspoCRM instance (e.g. espoexample.com):\n"
+        read data[domain]
     fi
 }
 
@@ -776,7 +777,10 @@ function displaySummaryInformation() {
         printf "  Email for the Let's Encrypt certificate: ${data[email]}\n"
     fi
 
+    printf "\n"
+
     isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
+
     if [ "$isConfirmed" != true ]; then
         stopProcess
     fi
