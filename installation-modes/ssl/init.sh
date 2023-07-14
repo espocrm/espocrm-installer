@@ -21,5 +21,3 @@ mkdir -p ./nginx/ssl/cert
 
 # Generate dummy certificates
 openssl req -x509 -nodes -days 30 -subj "/CN=$domain" -newkey rsa:4096 -keyout ./nginx/ssl/cert/privkey.pem -out ./nginx/ssl/cert/fullchain.pem;
-
-createDockerNetwork "external"
