@@ -23,14 +23,14 @@ services:
     image: nginx
     container_name: espocrm-nginx
     environment:
-      NGINX_HOST: "%%DOMAIN_NAME%%"
+      NGINX_HOST: %%DOMAIN_NAME%%
     restart: always
     depends_on:
       - espocrm
     links:
       - espocrm
     volumes:
-      - ./data/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./data/nginx/conf.d/:/etc/nginx/templates
       - ./data/espocrm:/var/www/html
       - ./data/nginx/espocrm.conf:/etc/nginx/espocrm.conf
       - ./data/nginx/logs:/var/log/nginx
