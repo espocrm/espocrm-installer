@@ -53,7 +53,19 @@ docker run --name espocrm-nginx-tmp \
     -d nginx
 
 # Generate certificates
-docker compose -f "$homeDirectory/docker-compose.yml" run --rm espocrm-certbot
+docker run -it --rm \
+    -v "$scriptDirectory/$server/ssl":/etc/letsencrypt \
+    -v "$scriptDirectory/$server/certbot":/var/www/certbot \
+    certbot/certbot \
+    certonly --webroot \
+    -w /var/www/certbot \
+    --agree-tos \
+    --no-eff-email \
+    --email $email \
+    --rsa-key-size 4096 \
+    --force-renewal \
+    -d $domain
+    -d www.$domain
 
 docker stop espocrm-nginx-tmp > /dev/null 2>&1
 docker rm espocrm-nginx-tmp > /dev/null 2>&1
