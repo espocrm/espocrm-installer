@@ -15,4 +15,4 @@ handleParams "$@"
 
 prepareConfiguration
 
-createDockerNetwork "external"
+#createDockerNetwork "external"

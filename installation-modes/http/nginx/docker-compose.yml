@@ -32,6 +32,8 @@ services:
     restart: always
     depends_on:
       - espocrm
+    links:
+      - espocrm
     ports:
       - "80:80"
     networks:
@@ -47,7 +49,6 @@ services:
       ESPOCRM_ADMIN_USERNAME: %%ADMIN_USERNAME%%
       ESPOCRM_ADMIN_PASSWORD: %%ADMIN_PASSWORD%%
       ESPOCRM_SITE_URL: "%%ESPOCRM_SITE_URL%%"
-      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBMISSION_DSN: "tcp://espocrm-websocket:7777"
     restart: always
     depends_on:
       - espocrm-db
@@ -74,8 +75,9 @@ services:
     container_name: espocrm-websocket
     image: espocrm/espocrm:fpm
     environment:
-      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBSCRIBER_DSN: "tcp://*:7777"
       ESPOCRM_CONFIG_USE_WEB_SOCKET: "true"
+      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBSCRIBER_DSN: "tcp://*:7777"
+      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBMISSION_DSN: "tcp://espocrm-websocket:7777"
     volumes:
      - ./data/espocrm:/var/www/html
     restart: always
@@ -90,6 +92,6 @@ services:
 
 networks:
   external:
-    external: true
+    driver: bridge
   internal:
     external: false
