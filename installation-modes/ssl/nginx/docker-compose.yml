@@ -27,6 +27,7 @@ services:
     restart: always
     depends_on:
       - espocrm
+      - espocrm-websocket
     volumes:
       - ./data/nginx/conf.d/:/etc/nginx/templates
       - ./data/espocrm:/var/www/html
