@@ -76,4 +76,4 @@ if [ ! -d "./$server/ssl/live/$domain" ]; then
     exit 1
 fi
 
-(crontab -l; echo "0 1 * * * $homeDirectory/command.sh cert-renew >> $homeDirectory/data/letsencrypt/renew.log 2>&1") | crontab -
+echo "0 1 * * * $homeDirectory/command.sh cert-renew >> $homeDirectory/data/letsencrypt/renew.log 2>&1" | crontab -
