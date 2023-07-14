@@ -32,8 +32,7 @@ services:
     restart: always
     depends_on:
       - espocrm
-    links:
-      - espocrm
+      - espocrm-websocket
     ports:
       - "80:80"
     networks:
@@ -48,7 +47,7 @@ services:
       ESPOCRM_DATABASE_PASSWORD: %%DB_PASSWORD%%
       ESPOCRM_ADMIN_USERNAME: %%ADMIN_USERNAME%%
       ESPOCRM_ADMIN_PASSWORD: %%ADMIN_PASSWORD%%
-      ESPOCRM_SITE_URL: "%%ESPOCRM_SITE_URL%%"
+      ESPOCRM_CONFIG_SITE_URL: "%%ESPOCRM_SITE_URL%%"
     restart: always
     depends_on:
       - espocrm-db
