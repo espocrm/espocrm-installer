@@ -38,6 +38,10 @@ function handleParams() {
             --email)
                 email="${value}"
                 ;;
+
+            --homeDirectory)
+                homeDirectory="${value}"
+                ;;
         esac
     done
 }
@@ -51,6 +55,7 @@ function prepareConfiguration() {
         ["ADMIN_USERNAME"]="$adminUsername"
         ["ADMIN_PASSWORD"]="$adminPassword"
         ["EMAIL"]="${email:-}"
+        ["HOME_DIRECTORY"]="$homeDirectory"
     )
 
     find "./$server" -type f  | while read file; do
