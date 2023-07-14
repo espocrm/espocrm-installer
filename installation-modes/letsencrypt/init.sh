@@ -64,8 +64,7 @@ docker run -it --rm \
     --email $email \
     --rsa-key-size 4096 \
     --force-renewal \
-    -d $domain \
-    -d www.$domain
+    -d $domain
 
 docker stop espocrm-nginx-tmp > /dev/null 2>&1
 docker rm espocrm-nginx-tmp > /dev/null 2>&1

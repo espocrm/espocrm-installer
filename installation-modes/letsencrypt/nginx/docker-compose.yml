@@ -100,7 +100,7 @@ services:
       - ./data/nginx/certbot:/var/www/certbot
     depends_on:
       - espocrm-nginx
-    command: certonly --webroot --webroot-path=/var/www/certbot --keep --agree-tos --rsa-key-size 4096 --email %%EMAIL%% --no-eff-email -d %%DOMAIN_NAME%% -d www.%%DOMAIN_NAME%%
+    command: certonly --webroot --webroot-path=/var/www/certbot --keep --agree-tos --rsa-key-size 4096 --email %%EMAIL%% --no-eff-email -d %%DOMAIN_NAME%%
 
 networks:
   external:
