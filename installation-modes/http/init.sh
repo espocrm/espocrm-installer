@@ -14,5 +14,3 @@ cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
 handleParams "$@"
 
 prepareConfiguration
-
-#createDockerNetwork "external"
