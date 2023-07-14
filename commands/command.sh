@@ -28,6 +28,7 @@ function actionHelp() {
     printf "  backup      Backup all EspoCRM services\n"
     printf "  restore     Restore the backup\n"
     printf "  import-sql  Import database data by SQL dump\n"
+    printf "  renew-cert  Renew a Let's Encrypt certificate\n"
     printf "  help        Information about the commands\n"
 }
 
@@ -283,6 +284,15 @@ function actionImportSql() {
     echo "Done"
 }
 
+function actionCertRenew() {
+    docker container inspect espocrm-certbot > /dev/null 2>&1 && docker rm -f espocrm-certbot
+
+    docker compose -f "$homeDirectory/docker-compose.yml" run --rm espocrm-certbot
+    docker compose -f "$homeDirectory/docker-compose.yml" exec espocrm-nginx nginx -s reload
+
+    echo "Done"
+}
+
 homeDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 action=${1:-help}
@@ -339,5 +349,9 @@ case "$action" in
 
     import-sql )
         actionImportSql "$option"
+        ;;
+
+    cert-renew )
+        actionCertRenew
         ;;
 esac

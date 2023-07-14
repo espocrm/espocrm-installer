@@ -53,18 +53,7 @@ docker run --name espocrm-nginx-tmp \
     -d nginx
 
 # Generate certificates
-docker run -it --rm \
-    -v "$scriptDirectory/$server/ssl":/etc/letsencrypt \
-    -v "$scriptDirectory/$server/certbot":/var/www/certbot \
-    certbot/certbot \
-    certonly --webroot \
-    -w /var/www/certbot \
-    --agree-tos \
-    --no-eff-email \
-    --email $email \
-    --rsa-key-size 4096 \
-    --force-renewal \
-    -d $domain
+docker compose -f "$homeDirectory/docker-compose.yml" run --rm espocrm-certbot
 
 docker stop espocrm-nginx-tmp > /dev/null 2>&1
 docker rm espocrm-nginx-tmp > /dev/null 2>&1
@@ -76,4 +65,4 @@ if [ ! -d "./$server/ssl/live/$domain" ]; then
     exit 1
 fi
 
-createDockerNetwork "external"
+(crontab -l; echo "0 1 * * * $homeDirectory/command.sh cert-renew >> $homeDirectory/data/letsencrypt/renew.log 2>&1") | crontab -

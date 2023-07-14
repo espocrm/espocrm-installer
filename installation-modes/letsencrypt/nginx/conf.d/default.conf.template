@@ -35,8 +35,8 @@ server {
         }
     }
 
-    ssl_certificate /etc/nginx/ssl/live/%%DOMAIN_NAME%%/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/%%DOMAIN_NAME%%/privkey.pem;
+    ssl_certificate /etc/nginx/ssl/live/${NGINX_HOST}/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/live/${NGINX_HOST}/privkey.pem;
     include /etc/nginx/ssl/ssl-options.conf;
     ssl_dhparam /etc/nginx/ssl/dhparams.pem;
 

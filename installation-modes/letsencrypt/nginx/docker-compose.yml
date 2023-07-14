@@ -23,23 +23,23 @@ services:
     image: nginx
     container_name: espocrm-nginx
     environment:
-      NGINX_HOST: "%%DOMAIN_NAME%%"
+      NGINX_HOST: %%DOMAIN_NAME%%
     restart: always
     depends_on:
       - espocrm
     volumes:
-      - ./data/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./data/nginx/conf.d/:/etc/nginx/templates
       - ./data/espocrm:/var/www/html
       - ./data/nginx/espocrm.conf:/etc/nginx/espocrm.conf
       - ./data/nginx/logs:/var/log/nginx
-      - ./data/nginx/ssl:/etc/nginx/ssl
+      - ./data/nginx/ssl:/etc/nginx/ssl:ro
       - ./data/nginx/certbot:/var/www/certbot
     ports:
       - "80:80"
       - "443:443"
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     networks:
       - external
+      - internal
 
   espocrm:
     image: espocrm/espocrm:fpm
@@ -50,8 +50,7 @@ services:
       ESPOCRM_DATABASE_PASSWORD: %%DB_PASSWORD%%
       ESPOCRM_ADMIN_USERNAME: %%ADMIN_USERNAME%%
       ESPOCRM_ADMIN_PASSWORD: %%ADMIN_PASSWORD%%
-      ESPOCRM_SITE_URL: "%%ESPOCRM_SITE_URL%%"
-      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBMISSION_DSN: "tcp://espocrm-websocket:7777"
+      ESPOCRM_CONFIG_SITE_URL: "%%ESPOCRM_SITE_URL%%"
     restart: always
     depends_on:
       - espocrm-db
@@ -78,8 +77,9 @@ services:
     container_name: espocrm-websocket
     image: espocrm/espocrm:fpm
     environment:
-      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBSCRIBER_DSN: "tcp://*:7777"
       ESPOCRM_CONFIG_USE_WEB_SOCKET: "true"
+      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBSCRIBER_DSN: "tcp://*:7777"
+      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBMISSION_DSN: "tcp://espocrm-websocket:7777"
     volumes:
      - ./data/espocrm:/var/www/html
     restart: always
@@ -95,16 +95,15 @@ services:
   espocrm-certbot:
     image: certbot/certbot
     container_name: espocrm-certbot
-    restart: always
     volumes:
       - ./data/nginx/ssl:/etc/letsencrypt
       - ./data/nginx/certbot:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    networks:
-      - external
+    depends_on:
+      - espocrm-nginx
+    command: certonly --webroot --webroot-path=/var/www/certbot --keep --agree-tos --rsa-key-size 4096 --email %%EMAIL%% --no-eff-email -d %%DOMAIN_NAME%% -d www.%%DOMAIN_NAME%%
 
 networks:
   external:
-    external: true
+    driver: bridge
   internal:
     external: false
