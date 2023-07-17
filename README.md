@@ -25,7 +25,7 @@ sudo bash install.sh
 
 ## Documentation
 
-For more information about `options`, `installation modes` and more, see [documentation](https://github.com/espocrm/documentation/blob/master/docs/administration/installation-by-script.md).
+For more information about `options`, `installation modes` and more, see [documentation](https://docs.espocrm.com/administration/installation-by-script/).
 
 ## License
 
