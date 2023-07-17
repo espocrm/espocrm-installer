@@ -25,7 +25,7 @@ services:
     environment:
       NGINX_HOST: "%%DOMAIN_NAME%%"
     volumes:
-      - ./data/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./data/nginx/conf.d/:/etc/nginx/templates
       - ./data/espocrm:/var/www/html
       - ./data/nginx/espocrm.conf:/etc/nginx/espocrm.conf
       - ./data/nginx/logs:/var/log/nginx
@@ -37,6 +37,7 @@ services:
       - "80:80"
     networks:
       - external
+      - internal
 
   espocrm:
     image: espocrm/espocrm:fpm
