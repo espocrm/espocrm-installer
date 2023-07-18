@@ -17,7 +17,7 @@ services:
     volumes:
       - ./data/mariadb/data:/var/lib/mysql
     networks:
-      - internal
+      - espocrm-network
 
   espocrm-nginx:
     image: nginx
@@ -39,8 +39,7 @@ services:
       - "80:80"
       - "443:443"
     networks:
-      - external
-      - internal
+      - espocrm-network
 
   espocrm:
     image: espocrm/espocrm:fpm
@@ -58,8 +57,7 @@ services:
     volumes:
      - ./data/espocrm:/var/www/html
     networks:
-      - external
-      - internal
+      - espocrm-network
 
   espocrm-daemon:
     image: espocrm/espocrm:fpm
@@ -71,8 +69,7 @@ services:
       - espocrm
     entrypoint: docker-daemon.sh
     networks:
-      - external
-      - internal
+      - espocrm-network
 
   espocrm-websocket:
     container_name: espocrm-websocket
@@ -90,8 +87,7 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - external
-      - internal
+      - espocrm-network
 
   espocrm-certbot:
     image: certbot/certbot
@@ -104,7 +100,5 @@ services:
     command: certonly --webroot --webroot-path=/var/www/certbot --keep --agree-tos --rsa-key-size 4096 --email %%EMAIL%% --no-eff-email -d %%DOMAIN_NAME%%
 
 networks:
-  external:
+  espocrm-network:
     driver: bridge
-  internal:
-    external: false
