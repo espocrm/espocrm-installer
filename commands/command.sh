@@ -295,6 +295,8 @@ function actionImportSql() {
 function actionCertGenerate() {
     local domain=$(getYamlValue "NGINX_HOST" espocrm-nginx)
 
+    mkdir -p "$homeDirectory/data/tmp"
+
     # Run templorary nginx
     echo "server {
         listen 80;

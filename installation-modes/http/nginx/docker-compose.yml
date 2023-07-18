@@ -23,7 +23,7 @@ services:
     image: nginx:latest
     container_name: espocrm-nginx
     environment:
-      NGINX_HOST: "%%DOMAIN_NAME%%"
+      NGINX_HOST: %%DOMAIN_NAME%%
     volumes:
       - ./data/nginx/conf.d/:/etc/nginx/templates
       - ./data/espocrm:/var/www/html
