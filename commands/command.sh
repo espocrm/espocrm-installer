@@ -16,20 +16,22 @@ fi
 function actionHelp() {
     printf "Available commands:\n"
 
-    printf "  status      Status of services\n"
-    printf "  restart     Restart services\n"
-    printf "  start       Start services\n"
-    printf "  stop        Stop services\n"
-    printf "  build       Build and start services\n"
-    printf "  rebuild     Run EspoCRM rebuild\n"
-    printf "  upgrade     Upgrade all EspoCRM services\n"
-    printf "  clean       Remove old and unused data\n"
-    printf "  logs        See the EspoCRM container logs\n"
-    printf "  backup      Backup all EspoCRM services\n"
-    printf "  restore     Restore the backup\n"
-    printf "  import-sql  Import database data by SQL dump\n"
-    printf "  renew-cert  Renew a Let's Encrypt certificate\n"
-    printf "  help        Information about the commands\n"
+    printf "  status          Status of services\n"
+    printf "  restart         Restart services\n"
+    printf "  start           Start services\n"
+    printf "  stop            Stop services\n"
+    printf "  build           Build and start services\n"
+    printf "  rebuild         Run EspoCRM rebuild\n"
+    printf "  upgrade         Upgrade all EspoCRM services\n"
+    printf "  clean           Remove old and unused data\n"
+    printf "  logs            See the EspoCRM container logs\n"
+    printf "  backup          Backup all EspoCRM services\n"
+    printf "  restore         Restore the backup\n"
+    printf "  import-sql      Import database data by SQL dump\n"
+    printf "  cert-generate   Generate a new Let's Encrypt certificate\n"
+    printf "  cert-renew      Renew an existing Let's Encrypt certificate\n"
+    printf "  apply-domain    Apply a domain change\n"
+    printf "  help            Information about the commands\n"
 }
 
 function promptConfirmation() {
@@ -61,6 +63,12 @@ function getYamlValue {
 
     if [ -f "${homeDirectory}/docker-compose.yml" ]; then
         sed -n "/${category}:/,/networks:/p" "${homeDirectory}/docker-compose.yml" | grep -oP "(?<=${keyName}: ).*" | head -1
+    fi
+}
+
+function getActualInstalledMode() {
+    if [ -f "$homeDirectory/docker-compose.yml" ]; then
+        head -n 1 "$homeDirectory/docker-compose.yml" | grep -oP "(?<=MODE: ).*"
     fi
 }
 
@@ -284,11 +292,69 @@ function actionImportSql() {
     echo "Done"
 }
 
+function actionCertGenerate() {
+    local domain=$(getYamlValue "NGINX_HOST" espocrm-nginx)
+
+    # Run templorary nginx
+    echo "server {
+        listen 80;
+        listen [::]:80;
+
+        server_name $domain;
+
+        location ~ /.well-known/acme-challenge {
+            allow all;
+            root /var/www/certbot;
+        }
+    }" > "$homeDirectory/data/tmp/nginx-default.conf"
+
+    # Check and remove existing espocrm-nginx-tmp
+    docker container inspect espocrm-nginx > /dev/null 2>&1 && docker rm -f espocrm-nginx
+
+    # Run espocrm-nginx-tmp
+    docker run --name espocrm-nginx \
+        -v "$homeDirectory/data/tmp/nginx-default.conf":/etc/nginx/conf.d/default.conf \
+        -v "$homeDirectory/data/nginx/ssl":/etc/letsencrypt \
+        -v "$homeDirectory/data/nginx/certbot":/var/www/certbot \
+        -p 80:80 \
+        -d nginx
+
+    # Generate certificates
+    docker compose -f "$homeDirectory/docker-compose.yml" run --rm espocrm-certbot
+
+    docker stop espocrm-nginx > /dev/null 2>&1
+    docker rm espocrm-nginx > /dev/null 2>&1
+
+    rm -rf "$homeDirectory/data/tmp"
+}
+
 function actionCertRenew() {
     docker container inspect espocrm-certbot > /dev/null 2>&1 && docker rm -f espocrm-certbot
 
     docker compose -f "$homeDirectory/docker-compose.yml" run --rm espocrm-certbot
     docker compose -f "$homeDirectory/docker-compose.yml" exec espocrm-nginx nginx -s reload
+
+    echo "Done"
+}
+
+function actionApplyDomain() {
+    case "$(getActualInstalledMode)" in
+        letsencrypt )
+            actionStop
+            actionCertGenerate
+            actionBuild
+            ;;
+
+        http | ssl )
+            actionStop
+            actionBuild
+            ;;
+
+        * )
+            echo "Error: Unable to apply the domain change, details: unable to determine the installation mode."
+            exit 1
+            ;;
+    esac
 
     echo "Done"
 }
@@ -351,7 +417,15 @@ case "$action" in
         actionImportSql "$option"
         ;;
 
+    cert-generate )
+        actionCertGenerate
+        ;;
+
     cert-renew )
         actionCertRenew
+        ;;
+
+    apply-domain )
+        actionApplyDomain
         ;;
 esac
