@@ -22,7 +22,7 @@ prepareConfiguration
 
 mkdir -p "./$server/ssl" \
     "./$server/certbot" \
-    ./letsencrypt \
+    "$homeDirectory/data/letsencrypt" \
     ./tmp
 
 curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf > "./$server/ssl/ssl-options.conf"
