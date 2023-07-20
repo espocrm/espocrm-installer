@@ -25,7 +25,14 @@ if ! [ -x "$(command -v openssl)" ]; then
         openssl
 fi
 
-# docker
+# check and disable a docker snap
+if [ -x "$(command -v docker)" ]; then
+    if grep -q "/snap/" "$(command -v docker)"; then
+        snap disable docker
+    fi
+fi
+
+# install docker
 if ! [ -x "$(command -v docker)" ]; then
     # Use official docker installation script
     curl -fsSL https://get.docker.com -o get-docker.sh
