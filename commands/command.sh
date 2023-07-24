@@ -3,7 +3,7 @@
 # EspoCRM installer MASTER
 #
 # EspoCRM - Open Source CRM application.
-# Copyright (C) 2014-2022 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+# Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
 # Website: https://www.espocrm.com
 
 set -e
