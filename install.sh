@@ -747,11 +747,13 @@ function runDocker() {
     printf "\nWaiting for the first-time EspoCRM configuration.\n"
     printf "This may take up to 5 minutes.\n"
 
+    runDockerResult=false
+
     for i in {1..120}
     do
         if [ $(curl -sfkLI "${data[url]}" --resolve "${data[domain]}:${data[httpPort]}:127.0.0.1" -o /dev/null -w '%{http_code}\n') == "200" ]; then
             runDockerResult=true
-            return
+            break
         fi
 
         printf "."
@@ -764,12 +766,18 @@ function runDocker() {
         sleep 5
     done
 
-    if [ $(curl -sfkL "${data[url]}:8080" --resolve "${data[domain]}:8080:127.0.0.1" --include --header "Connection: Upgrade" --header "Upgrade: websocket" -o /dev/null -w '%{http_code}\n') != "400" ]; then
-        docker compose -f "${data[homeDirectory]}/docker-compose.yml" restart espocrm-websocket
-        docker compose -f "${data[homeDirectory]}/docker-compose.yml" restart espocrm-nginx
-    fi
+    for i in {1..20}
+    do
+        if [ "$(docker container inspect -f '{{.State.Running}}' espocrm-websocket)" == "true" ]; then
+            sleep 3
+            docker compose -f "${data[homeDirectory]}/docker-compose.yml" restart espocrm-nginx
+            break
+        fi
 
-    runDockerResult=false
+        printf "."
+
+        sleep 5
+    done
 }
 
 function displaySummaryInformation() {
