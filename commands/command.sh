@@ -331,12 +331,14 @@ function actionCertGenerate() {
 }
 
 function actionCertRenew() {
+    printf "\n%s\n" "$(date)"
+
     docker container inspect espocrm-certbot > /dev/null 2>&1 && docker rm -f espocrm-certbot
 
     docker compose -f "$homeDirectory/docker-compose.yml" run --rm espocrm-certbot
     docker compose -f "$homeDirectory/docker-compose.yml" exec espocrm-nginx nginx -s reload
 
-    echo "Done"
+    printf "Done\n"
 }
 
 function actionApplyDomain() {
