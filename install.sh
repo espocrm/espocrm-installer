@@ -770,7 +770,7 @@ function runDocker() {
     do
         if [ "$(docker container inspect -f '{{.State.Running}}' espocrm-websocket)" == "true" ]; then
             sleep 3
-            docker compose -f "${data[homeDirectory]}/docker-compose.yml" restart espocrm-nginx
+            docker compose -f "${data[homeDirectory]}/docker-compose.yml" restart espocrm-nginx > /dev/null 2>&1
             break
         fi
 
