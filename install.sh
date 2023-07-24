@@ -764,6 +764,11 @@ function runDocker() {
         sleep 5
     done
 
+    if [ $(curl -sfkL "${data[url]}:8080" --resolve "${data[domain]}:8080:127.0.0.1" --include --header "Connection: Upgrade" --header "Upgrade: websocket" -o /dev/null -w '%{http_code}\n') != "400" ]; then
+        docker compose -f "${data[homeDirectory]}/docker-compose.yml" restart espocrm-websocket
+        docker compose -f "${data[homeDirectory]}/docker-compose.yml" restart espocrm-nginx
+    fi
+
     runDockerResult=false
 }
 
