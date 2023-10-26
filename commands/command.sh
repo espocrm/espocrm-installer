@@ -28,6 +28,7 @@ function actionHelp() {
     printf "  backup          Backup all EspoCRM services\n"
     printf "  restore         Restore the backup\n"
     printf "  import-sql      Import database data by SQL dump\n"
+    printf "  export-sql      Export database data into SQL dump\n"
     printf "  cert-generate   Generate a new Let's Encrypt certificate\n"
     printf "  cert-renew      Renew an existing Let's Encrypt certificate\n"
     printf "  apply-domain    Apply a domain change\n"
@@ -363,6 +364,61 @@ function actionApplyDomain() {
     echo "Done"
 }
 
+function actionExportSql() {
+    local backupPath=${1:-}
+    local tableName=${2:-}
+    local fileName=${3:-"espocrm"}
+
+    if [ -z "$backupPath" ]; then
+        echo "ERROR: Path is not specified, ex. /var/www/backup."
+        exit 1
+    fi
+
+    if [[ "$backupPath" != *".sql" ]]; then
+        backupPath=$(echo "$backupPath" | sed 's/\/$//')
+        backupPath="$backupPath/$fileName.sql"
+    fi
+
+    directory=$(dirname "$backupPath")
+
+    if [ ! -d "$directory" ]; then
+        mkdir -p "$directory"
+    fi
+
+    touch "$backupPath" || {
+        echo "ERROR: Permission denied to create the $backupPath file."
+        exit 1
+    }
+
+    local freeSpace=$(freeSpace)
+    local usedSpace=$(usedSpace)
+    usedSpace=$(( 2*usedSpace ))
+
+    if [[ $freeSpace -lt $usedSpace ]]; then
+        echo "ERROR: Insufficient disk space."
+        exit 1
+    fi;
+
+    echo "Exporting the database..."
+
+    local dbName=$(getYamlValue "MARIADB_DATABASE" espocrm-db)
+    local dbRootPass=$(getYamlValue "MARIADB_ROOT_PASSWORD" espocrm-db)
+
+    if [ -n "$tableName" ]; then
+        docker exec -i espocrm-db mariadb-dump --user=root --password="$dbRootPass" "$dbName" "$tableName" > "$backupPath" || {
+            echo "ERROR: Unable to export the database."
+            exit 1
+        }
+    else
+        docker exec -i espocrm-db mariadb-dump --user=root --password="$dbRootPass" "$dbName" > "$backupPath" || {
+            echo "ERROR: Unable to export the database."
+            exit 1
+        }
+    fi
+
+    echo "Done. Saved to $backupPath"
+}
+
 homeDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 action=${1:-help}
@@ -431,5 +487,9 @@ case "$action" in
 
     apply-domain )
         actionApplyDomain
+        ;;
+
+    export-sql )
+        actionExportSql "$option"
         ;;
 esac
