@@ -16,23 +16,24 @@ fi
 function actionHelp() {
     printf "Available commands:\n"
 
-    printf "  status          Status of services\n"
-    printf "  restart         Restart services\n"
-    printf "  start           Start services\n"
-    printf "  stop            Stop services\n"
-    printf "  build           Build and start services\n"
-    printf "  rebuild         Run EspoCRM rebuild\n"
-    printf "  upgrade         Upgrade all EspoCRM services\n"
-    printf "  clean           Remove old and unused data\n"
-    printf "  logs            See the EspoCRM container logs\n"
-    printf "  backup          Backup all EspoCRM services\n"
-    printf "  restore         Restore the backup\n"
-    printf "  import-sql      Import database data by SQL dump\n"
-    printf "  export-sql      Export database data into SQL dump\n"
-    printf "  cert-generate   Generate a new Let's Encrypt certificate\n"
-    printf "  cert-renew      Renew an existing Let's Encrypt certificate\n"
-    printf "  apply-domain    Apply a domain change\n"
-    printf "  help            Information about the commands\n"
+    printf "  status                Status of services\n"
+    printf "  restart               Restart services\n"
+    printf "  start                 Start services\n"
+    printf "  stop                  Stop services\n"
+    printf "  build                 Build and start services\n"
+    printf "  rebuild               Run EspoCRM rebuild\n"
+    printf "  upgrade               Upgrade all EspoCRM services\n"
+    printf "  clean                 Remove old and unused data\n"
+    printf "  logs                  See the EspoCRM container logs\n"
+    printf "  backup                Backup all EspoCRM services\n"
+    printf "  restore               Restore the backup\n"
+    printf "  import-sql            Import database data by SQL dump\n"
+    printf "  export-sql            Export database data into SQL dump\n"
+    printf "  export-table-sql      Export a single database table into SQL dump\n"
+    printf "  cert-generate         Generate a new Let's Encrypt certificate\n"
+    printf "  cert-renew            Renew an existing Let's Encrypt certificate\n"
+    printf "  apply-domain          Apply a domain change\n"
+    printf "  help                  Information about the commands\n"
 }
 
 function promptConfirmation() {
@@ -370,7 +371,7 @@ function actionExportSql() {
     local fileName=${3:-"espocrm"}
 
     if [ -z "$backupPath" ]; then
-        echo "ERROR: Path is not specified, ex. /var/www/backup."
+        echo "ERROR: The path is not specified, ex. export-sql /var/www/backup"
         exit 1
     fi
 
@@ -416,13 +417,43 @@ function actionExportSql() {
         }
     fi
 
-    echo "Done. Saved to $backupPath"
+    local backupPathArchived="$backupPath.tar.gz"
+
+    tar -czf "$backupPathArchived" -C $(dirname "$backupPath") $(basename "$backupPath") > /dev/null 2>&1 || {
+        echo "Done."
+        echo "Saved to $backupPath"
+
+        return
+    }
+
+    rm -f "$backupPath"
+
+    echo "Done."
+    echo "Saved to $backupPathArchived"
+}
+
+function actionExportTableSql() {
+    local backupPath=${1:-}
+    local tableName=${2:-}
+
+    if [ -z "$backupPath" ]; then
+        echo "ERROR: The path is not specified, ex. export-table-sql /var/www/backup account"
+        exit 1
+    fi
+
+    if [ -z "$tableName" ]; then
+        echo "ERROR: Table name is not specified, ex. export-table-sql /var/www/backup account"
+        exit 1
+    fi
+
+    actionExportSql "$backupPath" "$tableName" "$tableName"
 }
 
 homeDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 action=${1:-help}
 option=${2:-}
+option2=${3:-}
 
 case "$action" in
     help )
@@ -491,5 +522,9 @@ case "$action" in
 
     export-sql )
         actionExportSql "$option"
+        ;;
+
+    export-table-sql )
+        actionExportTableSql "$option" "$option2"
         ;;
 esac
