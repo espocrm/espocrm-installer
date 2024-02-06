@@ -135,6 +135,10 @@ function handleArguments() {
             --backup-path)
                 data[backupPath]="${value}"
                 ;;
+
+            --environment)
+                data[action]="environment"
+                ;;
         esac
     done
 }
@@ -905,6 +909,8 @@ Password: ${data[adminPassword]}
 }
 
 actionCommand() {
+    cleanTemporaryFiles
+
     downloadSourceFiles
 
     if [ ! -f "${data[homeDirectory]}/command.sh" ]; then
@@ -914,6 +920,48 @@ actionCommand() {
     cp ./espocrm-installer-master/commands/command.sh "${data[homeDirectory]}/command.sh" || {
         printExitError "Unable to update the ${data[homeDirectory]}/command.sh"
     }
+
+    chmod +x "${data[homeDirectory]}/command.sh"
+
+    echo "Done"
+}
+
+actionEnvironment() {
+    if [ -z "$noConfirmation" ]; then
+        printf "This script will set up the environment required for EspoCRM (including Docker, Nginx, PHP, MariaDB).\n"
+
+        isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
+        if [ "$isConfirmed" != true ]; then
+            stopProcess
+        fi
+    fi
+
+    checkFixSystemRequirements "$operatingSystem"
+
+    cleanTemporaryFiles
+
+    downloadSourceFiles
+
+    cd "espocrm-installer-master"
+
+    # Check and configure a system
+    case $(getOs) in
+        ubuntu | debian | mint )
+            runShellScript "system-configuration/debian.sh"
+            ;;
+
+        * )
+            printExitError "Your OS is not supported by the script. We recommend to use Ubuntu server."
+            ;;
+    esac
+
+    mkdir -p "${data[homeDirectory]}"
+
+    cp ./espocrm-installer-master/commands/command.sh "${data[homeDirectory]}/command.sh" || {
+        printExitError "Unable to copy the ${data[homeDirectory]}/command.sh"
+    }
+
+    chmod +x "${data[homeDirectory]}/command.sh"
 
     echo "Done"
 }
@@ -934,6 +982,10 @@ case "${data[action]}" in
 
     command )
         actionCommand
+        ;;
+
+    environment )
+        actionEnvironment
         ;;
 
     * )
