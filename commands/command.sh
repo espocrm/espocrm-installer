@@ -106,7 +106,11 @@ function actionStop() {
         return
     fi
 
-    docker compose -f "$homeDirectory/docker-compose.yml" down
+    if [ ! -f "${homeDirectory}/docker-compose.yml" ]; then
+        return
+    fi
+
+    docker compose -f "${homeDirectory}/docker-compose.yml" down
 }
 
 function actionBuild() {
@@ -207,7 +211,7 @@ function actionRestore() {
         exit 1
     fi;
 
-    actionStop
+    actionStop > /dev/null 2>&1
 
     rm -rf "${homeDirectory}_OLD"
 
