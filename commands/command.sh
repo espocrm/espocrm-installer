@@ -235,6 +235,7 @@ function actionRestore() {
 
 function actionImportSql() {
     local sqlFile=${1:-}
+    local skipDrop=${2:-}
 
     if [ -z "$sqlFile" ]; then
         echo "ERROR: SQL file is not specified."
@@ -278,10 +279,12 @@ function actionImportSql() {
     local dbName=$(getYamlValue "MARIADB_DATABASE" espocrm-db)
     local dbRootPass=$(getYamlValue "MARIADB_ROOT_PASSWORD" espocrm-db)
 
-    docker exec -i espocrm-db mariadb --user=root --password="$dbRootPass" -e "DROP DATABASE $dbName; CREATE DATABASE $dbName;" > /dev/null 2>&1 || {
-        echo "ERROR: Unable to clean the database."
-        exit 1
-    }
+    if [ "$skipDrop" != true ]; then
+        docker exec -i espocrm-db mariadb --user=root --password="$dbRootPass" -e "DROP DATABASE $dbName; CREATE DATABASE $dbName;" > /dev/null 2>&1 || {
+            echo "ERROR: Unable to clean the database."
+            exit 1
+        }
+    fi
 
     docker exec -i espocrm-db mariadb --user=root --password="$dbRootPass" "$dbName" < "$sqlFile" || {
         echo "ERROR: Unable to import the database data."
@@ -505,7 +508,11 @@ case "$action" in
         ;;
 
     import-sql )
-        actionImportSql "$option"
+        if [ -n "$option2" ] && [ "$option2" = "--skip-drop" ]; then
+            actionImportSql "$option" true
+        else
+            actionImportSql "$option"
+        fi
         ;;
 
     cert-generate )
