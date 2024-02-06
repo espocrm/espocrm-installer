@@ -75,7 +75,7 @@ function getActualInstalledMode() {
 }
 
 function actionRebuild() {
-    /usr/bin/docker exec --user www-data -i espocrm /bin/bash -c "php command.php rebuild"
+    docker exec --user www-data -i espocrm /bin/bash -c "php command.php rebuild"
 }
 
 function actionRestart() {
