@@ -957,7 +957,7 @@ actionEnvironment() {
 
     mkdir -p "${data[homeDirectory]}"
 
-    cp ./espocrm-installer-master/commands/command.sh "${data[homeDirectory]}/command.sh" || {
+    cp ./commands/command.sh "${data[homeDirectory]}/command.sh" || {
         printExitError "Unable to copy the ${data[homeDirectory]}/command.sh"
     }
 
