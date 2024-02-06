@@ -512,8 +512,10 @@ case "$action" in
         ;;
 
     import-sql )
-        if [ -n "$option2" ] && [ "$option2" = "--skip-drop" ]; then
+        if [ -n "$option" ] && [ "$option2" = "--skip-drop" ]; then
             actionImportSql "$option" true
+        elif [ -n "$option2" ] && [ "$option" = "--skip-drop" ]; then
+            actionImportSql "$option2" true
         else
             actionImportSql "$option"
         fi
