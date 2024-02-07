@@ -139,6 +139,10 @@ function handleArguments() {
             --environment)
                 data[action]="environment"
                 ;;
+
+            --network)
+                data[action]="network"
+                ;;
         esac
     done
 }
@@ -966,6 +970,14 @@ actionEnvironment() {
     echo "Done"
 }
 
+# DEPRECATED
+# todo: remove in 2027
+actionNetwork() {
+    docker network inspect "external" >/dev/null 2>&1 || docker network create "external"
+
+    echo "Done"
+}
+
 #---------------------------------------
 
 scriptDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
@@ -986,6 +998,10 @@ case "${data[action]}" in
 
     environment )
         actionEnvironment
+        ;;
+
+    network )
+        actionNetwork
         ;;
 
     * )
