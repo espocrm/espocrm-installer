@@ -1,4 +1,5 @@
 # MODE: ssl
+# VERSION: MASTER
 
 version: '3'
 

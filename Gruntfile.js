@@ -70,6 +70,10 @@ module.exports = function (grunt) {
                             replacement: 'installer v<%= pkg.version %>'
                         },
                         {
+                            match: /VERSION: MASTER/g,
+                            replacement: 'VERSION: <%= pkg.version %>'
+                        },
+                        {
                             match: /espocrm-installer-master/g,
                             replacement: 'espocrm-installer-<%= pkg.version %>'
                         },
@@ -87,6 +91,10 @@ module.exports = function (grunt) {
                     {
                         src: 'build/tmp/<%= pkg.name %>-<%= pkg.version %>/commands/command.sh',
                         dest: 'build/tmp/<%= pkg.name %>-<%= pkg.version %>/commands/command.sh'
+                    },
+                    {
+                        src: 'build/tmp/<%= pkg.name %>-<%= pkg.version %>/installation-modes/**/nginx/docker-compose.yml',
+                        dest: './'
                     }
                 ]
             }
