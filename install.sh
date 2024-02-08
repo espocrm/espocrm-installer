@@ -84,7 +84,7 @@ function handleArguments() {
         local value=$(echo "$ARGUMENT" | cut -f2 -d=)
 
         case "$key" in
-            -y|--yes)
+            -y | --yes)
                 noConfirmation=true
                 ;;
 
@@ -112,19 +112,19 @@ function handleArguments() {
                 data[email]="${value}"
                 ;;
 
-            --dbRootPassword)
+            --db-root-password | --dbRootPassword)
                 data[dbRootPassword]="${value}"
                 ;;
 
-            --dbPassword)
+            --db-password | --dbPassword)
                 data[dbPassword]="${value}"
                 ;;
 
-            --adminUsername)
+            --admin-username | --adminUsername)
                 data[adminUsername]="${value}"
                 ;;
 
-            --adminPassword)
+            --admin-password | --adminPassword)
                 data[adminPassword]="${value}"
                 ;;
 
@@ -132,7 +132,7 @@ function handleArguments() {
                 data[action]="command"
                 ;;
 
-            --backup-path)
+            --backup-path | --backupPath)
                 data[backupPath]="${value}"
                 ;;
 
