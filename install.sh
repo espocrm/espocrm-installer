@@ -174,16 +174,11 @@ function getOs() {
 
     case $(uname | tr '[:upper:]' '[:lower:]') in
         linux*)
-            local linuxString=$(cat /etc/*release | grep ^NAME | tr -d 'NAME="' | tr '[:upper:]' '[:lower:]')
+            local linuxOs=$(getLinuxOs)
 
-            declare -a linuxOsList=(centos redhat fedora ubuntu debian mint)
-            for linuxOs in "${linuxOsList[@]}"
-            do
-                if [[ $linuxString == "$linuxOs"* ]]; then
-                    osType="$linuxOs"
-                    break
-                fi
-            done
+            if [ -n "$linuxOs" ]; then
+                osType="$linuxOs"
+            fi
             ;;
         darwin*)
             osType="osx"
@@ -194,6 +189,22 @@ function getOs() {
     esac
 
     echo "$osType"
+}
+
+function getLinuxOs() {
+    declare -a linuxOsList=(centos redhat fedora ubuntu debian mint)
+
+    find -L /etc/ -maxdepth 1 -type f -name "*release" -print | while read file; do
+        local osString=$(cat "$file" | grep "^NAME=" | sed 's/NAME=//' | tr -d '"' | tr '[:upper:]' '[:lower:]')
+
+        for linuxOs in "${linuxOsList[@]}"
+        do
+            if [[ "$osString" == *"$linuxOs"* ]]; then
+                echo "$linuxOs"
+                return
+            fi
+        done
+    done
 }
 
 function getHostname() {
