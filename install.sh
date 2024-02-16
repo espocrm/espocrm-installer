@@ -358,6 +358,13 @@ function forceServiceStop() {
 function checkFixSystemRequirements() {
     local os="$1"
 
+    # Check port
+    local isPortInUse=$(isPortInUse "${data[httpPort]}")
+
+    if [ "$isPortInUse" = true ]; then
+        printExitError "The required port \"${data[httpPort]}\" is already in use. Free up the port and try again."
+    fi
+
     declare -a missingLibs=()
 
     if ! [ -x "$(command -v wget)" ] && ! [ -x "$(command -v curl)" ]; then
@@ -384,13 +391,6 @@ function checkFixSystemRequirements() {
             printExitError "Missing libraries: ${missingLibs[@]}. Please install them and try again."
             ;;
     esac
-
-    # Check port
-    local isPortInUse=$(isPortInUse "${data[httpPort]}")
-
-    if [ "$isPortInUse" = true ]; then
-        printExitError "The required port \"${data[httpPort]}\" is already in use. Free up the port and try again."
-    fi
 }
 
 function getBackupDirectory() {
