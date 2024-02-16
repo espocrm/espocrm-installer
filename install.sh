@@ -301,6 +301,22 @@ function isIpAddress() {
     echo false
 }
 
+function isPortInUse() {
+    local port="$1"
+
+    if [ -z "$port" ]; then
+        echo false
+        return
+    fi
+
+    if (echo >"/dev/tcp/localhost/$port") &>/dev/null ; then
+        echo true
+        return
+    fi
+
+    echo false
+}
+
 function isEmailValidated() {
     local emailAddress="$1"
 
@@ -368,6 +384,13 @@ function checkFixSystemRequirements() {
             printExitError "Missing libraries: ${missingLibs[@]}. Please install them and try again."
             ;;
     esac
+
+    # Check port
+    local isPortInUse=$(isPortInUse "${data[httpPort]}")
+
+    if [ "$isPortInUse" = true ]; then
+        printExitError "The required port \"${data[httpPort]}\" is already in use. Free up the port and try again."
+    fi
 }
 
 function getBackupDirectory() {
