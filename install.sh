@@ -224,11 +224,11 @@ function getHostname() {
 function getServerIp() {
     local serverIP=$(hostname -I | awk '{print $1}')
 
-    if [ -z "$serverIP" ] || [ "$(isIpAddress $serverIP)" != true ]; then
+    if [ -z "$serverIP" ] || [ "$(isIpValid $serverIP)" != true ]; then
         serverIP=$(ip route get 1 | awk '{print $NF;exit}')
     fi
 
-    if [ "$(isIpAddress $serverIP)" = true ]; then
+    if [ "$(isIpValid $serverIP)" = true ]; then
         echo "$serverIP"
     fi
 }
@@ -264,8 +264,8 @@ function isFqdn() {
         return
     fi
 
-    local isIpAddress=$(isIpAddress "$hostname")
-    if [ "$isIpAddress" = true ]; then
+    local isIpValid=$(isIpValid "$hostname")
+    if [ "$isIpValid" = true ]; then
         echo false
         return
     fi
@@ -290,7 +290,7 @@ function isHostAvailable() {
     echo false
 }
 
-function isIpAddress() {
+function isIpValid() {
     local ipAddress="$1"
 
     if [[ $ipAddress =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -533,9 +533,9 @@ function normalizeData() {
 
     # Validate domain
     isFqdn=$(isFqdn "${data[domain]}")
-    isIpAddress=$(isIpAddress "${data[domain]}")
+    isIpValid=$(isIpValid "${data[domain]}")
 
-    if [ "$isFqdn" != true ] && [ "$isIpAddress" != true ]; then
+    if [ "$isFqdn" != true ] && [ "$isIpValid" != true ]; then
         printExitError "Your domain name or IP: \"${data[domain]}\" is incorrect. Please enter a valid one and try again."
     fi
 
@@ -693,9 +693,9 @@ function handleInstallationMode() {
             if [ -z "${data[domain]}" ]; then
                 data[domain]=$(getServerIp)
 
-                isIpAddress=$(isIpAddress "${data[domain]}")
+                isIpValid=$(isIpValid "${data[domain]}")
 
-                if [ "$isIpAddress" != true ]; then
+                if [ "$isIpValid" != true ]; then
                     printf "\nEnter a domain name or IP for the future EspoCRM instance (e.g. 234.32.0.32 or espoexample.com):\n"
                     read data[domain]
                 fi
