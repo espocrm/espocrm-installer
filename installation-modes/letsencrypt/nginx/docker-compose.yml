@@ -1,8 +1,6 @@
 # MODE: letsencrypt
 # VERSION: MASTER
 
-version: '3'
-
 services:
 
   espocrm-db:
