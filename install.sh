@@ -145,11 +145,11 @@ function handleArguments() {
                 ;;
 
             --public-ip)
-                data[ipAddressType]="public"
+                data[ipAddressType]="1"
                 ;;
 
             --private-ip)
-                data[ipAddressType]="private"
+                data[ipAddressType]="2"
                 ;;
         esac
     done
@@ -702,14 +702,16 @@ function defineIpAddress() {
     local publicIp=$(getPublicIp)
     local privateIp=$(getServerIp)
 
-    read -p "
+    if [ -z "${data[ipAddressType]}" ]; then
+        read -p "
 Please choose your IP for the future EspoCRM instance [1-2]:
   * 1. Public IP (recommended): $publicIp [1]
   * 2. Private IP (for local installation only): $privateIp [2]
   * 3. Enter another IP [3]
 " ipAddressType
+    fi
 
-    case "$ipAddressType" in
+    case "${data[ipAddressType]}" in
         1 )
             data[domain]="$publicIp"
             ;;
