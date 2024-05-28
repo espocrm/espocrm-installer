@@ -548,12 +548,9 @@ function normalizeData() {
     fi
 
     # Validate domain
-    isFqdn=$(isFqdn "${data[domain]}")
-    isIpValid=$(isIpValid "${data[domain]}")
+    validateIpOrDomain
 
-    if [ "$isFqdn" != true ] && [ "$isIpValid" != true ]; then
-        printExitError "Your domain name or IP: \"${data[domain]}\" is incorrect. Please enter a valid one and try again."
-    fi
+    isFqdn=$(isFqdn "${data[domain]}")
 
     if [ "$isFqdn" != true ] && [ "$mode" != "http" ]; then
         printExitError "Your domain name: \"${data[domain]}\" is incorrect. SSL/TLS certificate can only be used for a valid domain name."
@@ -690,11 +687,7 @@ Please choose the installation mode you prefer [1-2]:
 }
 
 function defineIpAddress() {
-    if [ -n "${data[domain]}" ]; then
-        defineDomainNameAutomatically
-    fi
-
-    if [ -n "$noConfirmation" ]; then
+    if [ -n "${data[domain]}" ] || [ -n "$noConfirmation" ]; then
         defineDomainNameAutomatically
         return
     fi
@@ -704,10 +697,10 @@ function defineIpAddress() {
 
     if [ -z "${data[ipAddressType]}" ]; then
         read -p "
-Please choose your IP for the future EspoCRM instance [1-2]:
+Please choose your IP for the future EspoCRM instance [1-3]:
   * 1. Public IP (recommended): $publicIp [1]
   * 2. Private IP (for local installation only): $privateIp [2]
-  * 3. Enter another IP [3]
+  * 3. Enter another IP or a domain [3]
 " data[ipAddressType]
     fi
 
@@ -734,12 +727,12 @@ Please choose your IP for the future EspoCRM instance [1-2]:
             ;;
     esac
 
-    validateIP
+    validateIpOrDomain
 }
 
 function defineDomainNameAutomatically() {
     if [ -n "${data[domain]}" ]; then
-        validateIP
+        validateIpOrDomain
         return
     fi
 
@@ -757,20 +750,22 @@ function defineDomainNameAutomatically() {
     esac
 }
 
-function validateIP() {
+function validateIpOrDomain() {
+    isFqdn=$(isFqdn "${data[domain]}")
     isIpValid=$(isIpValid "${data[domain]}")
 
     if [ -z "$noConfirmation" ]; then
-        if [ "$isIpValid" != true ]; then
-            printf "\nYour IP address is incorrect. Please enter again.\n"
+        if [ "$isFqdn" != true ] && [ "$isIpValid" != true ]; then
+            printf "\nYour domain name or IP: \"${data[domain]}\" is incorrect. Please enter a valid one and try again\n"
             read data[domain]
-        fi
 
-        isIpValid=$(isIpValid "${data[domain]}")
+            isFqdn=$(isFqdn "${data[domain]}")
+            isIpValid=$(isIpValid "${data[domain]}")
+        fi
     fi
 
-    if [ "$isIpValid" != true ]; then
-        printExitError "Incorrect IP address. Please try again."
+    if [ "$isFqdn" != true ] && [ "$isIpValid" != true ]; then
+        printExitError "Your domain name or IP: \"${data[domain]}\" is incorrect."
     fi
 }
 
