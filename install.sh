@@ -143,6 +143,14 @@ function handleArguments() {
             --network)
                 data[action]="network"
                 ;;
+
+            --public-ip)
+                data[ipAddressType]="public"
+                ;;
+
+            --private-ip)
+                data[ipAddressType]="private"
+                ;;
         esac
     done
 }
@@ -230,6 +238,14 @@ function getServerIp() {
 
     if [ "$(isIpValid $serverIP)" = true ]; then
         echo "$serverIP"
+    fi
+}
+
+function getPublicIp() {
+    local publicIP=$(curl -4 -s ifconfig.me)
+
+    if [ "$(isIpValid $publicIP)" = true ]; then
+        echo "$publicIP"
     fi
 }
 
@@ -673,6 +689,68 @@ Please choose the installation mode you prefer [1-2]:
     esac
 }
 
+function defineIpAddress() {
+    if [ -n "${data[domain]}" ]; then
+        return
+    fi
+
+    if [ -n "$noConfirmation" ]; then
+        defineDomainNameutAomatically
+        return
+    fi
+
+    local publicIp=$(getPublicIp)
+    local privateIp=$(getServerIp)
+
+    read -p "
+Please choose your IP for the future EspoCRM instance [1-2]:
+  * 1. Public IP (recommended): $publicIp [1]
+  * 2. Private IP (for local installation only): $privateIp [2]
+" ipAddressType
+
+    case "$ipAddressType" in
+        1 )
+            data[domain]="$publicIp"
+            ;;
+
+        2 )
+            data[domain]="$privateIp"
+            ;;
+
+        * )
+            printRedMessage "Incorrect selection. Please try again."
+            selectIpAddress
+            return
+            ;;
+    esac
+
+    isIpValid=$(isIpValid "${data[domain]}")
+
+    if [ "$isIpValid" != true ]; then
+        printf "\nEnter an IP for the future EspoCRM instance (e.g. 234.32.0.32 or espoexample.com):\n"
+        read data[domain]
+    fi
+}
+
+function defineDomainNameutAomatically() {
+    if [ -n "${data[domain]}" ]; then
+        return
+    fi
+
+    local publicIp=$(getPublicIp)
+    local privateIp=$(getServerIp)
+
+    case "${data[ipAddressType]}" in
+        private )
+            data[domain]="$privateIp"
+            ;;
+
+        * )
+            data[domain]="$publicIp"
+            ;;
+    esac
+}
+
 function handleInstallationMode() {
     local mode="$1"
 
@@ -690,16 +768,7 @@ function handleInstallationMode() {
             ;;
 
         3 )
-            if [ -z "${data[domain]}" ]; then
-                data[domain]=$(getServerIp)
-
-                isIpValid=$(isIpValid "${data[domain]}")
-
-                if [ "$isIpValid" != true ]; then
-                    printf "\nEnter a domain name or IP for the future EspoCRM instance (e.g. 234.32.0.32 or espoexample.com):\n"
-                    read data[domain]
-                fi
-            fi
+            defineIpAddress
             ;;
 
         * )
