@@ -727,6 +727,8 @@ Please choose your IP for the future EspoCRM instance [1-2]:
 
         * )
             printRedMessage "Incorrect selection. Please try again."
+            unset data[ipAddressType]
+
             defineIpAddress
             return
             ;;
