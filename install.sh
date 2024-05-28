@@ -706,6 +706,7 @@ function defineIpAddress() {
 Please choose your IP for the future EspoCRM instance [1-2]:
   * 1. Public IP (recommended): $publicIp [1]
   * 2. Private IP (for local installation only): $privateIp [2]
+  * 3. Enter another IP [3]
 " ipAddressType
 
     case "$ipAddressType" in
@@ -715,6 +716,11 @@ Please choose your IP for the future EspoCRM instance [1-2]:
 
         2 )
             data[domain]="$privateIp"
+            ;;
+
+        3 )
+            printf "\nEnter an IPv4 (e.g. 234.32.0.32):\n"
+            read data[domain]
             ;;
 
         * )
@@ -727,7 +733,7 @@ Please choose your IP for the future EspoCRM instance [1-2]:
     isIpValid=$(isIpValid "${data[domain]}")
 
     if [ "$isIpValid" != true ]; then
-        printf "\nEnter an IP for the future EspoCRM instance (e.g. 234.32.0.32 or espoexample.com):\n"
+        printf "\nEnter an IP for the future EspoCRM instance (e.g. 234.32.0.32):\n"
         read data[domain]
     fi
 }
