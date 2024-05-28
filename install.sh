@@ -708,7 +708,7 @@ Please choose your IP for the future EspoCRM instance [1-2]:
   * 1. Public IP (recommended): $publicIp [1]
   * 2. Private IP (for local installation only): $privateIp [2]
   * 3. Enter another IP [3]
-" ipAddressType
+" data[ipAddressType]
     fi
 
     case "${data[ipAddressType]}" in
