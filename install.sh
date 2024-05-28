@@ -733,7 +733,7 @@ Please choose your IP for the future EspoCRM instance [1-2]:
     isIpValid=$(isIpValid "${data[domain]}")
 
     if [ "$isIpValid" != true ]; then
-        printf "\nEnter an IP for the future EspoCRM instance (e.g. 234.32.0.32):\n"
+        printf "\nYour IP address is incorrect. Please enter again.\n"
         read data[domain]
     fi
 }
