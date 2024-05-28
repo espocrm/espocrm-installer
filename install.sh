@@ -691,11 +691,11 @@ Please choose the installation mode you prefer [1-2]:
 
 function defineIpAddress() {
     if [ -n "${data[domain]}" ]; then
-        return
+        defineDomainNameAutomatically
     fi
 
     if [ -n "$noConfirmation" ]; then
-        defineDomainNameutAomatically
+        defineDomainNameAutomatically
         return
     fi
 
@@ -730,16 +730,12 @@ Please choose your IP for the future EspoCRM instance [1-2]:
             ;;
     esac
 
-    isIpValid=$(isIpValid "${data[domain]}")
-
-    if [ "$isIpValid" != true ]; then
-        printf "\nYour IP address is incorrect. Please enter again.\n"
-        read data[domain]
-    fi
+    validateIP
 }
 
-function defineDomainNameutAomatically() {
+function defineDomainNameAutomatically() {
     if [ -n "${data[domain]}" ]; then
+        validateIP
         return
     fi
 
@@ -755,6 +751,23 @@ function defineDomainNameutAomatically() {
             data[domain]="$publicIp"
             ;;
     esac
+}
+
+function validateIP() {
+    isIpValid=$(isIpValid "${data[domain]}")
+
+    if [ -z "$noConfirmation" ]; then
+        if [ "$isIpValid" != true ]; then
+            printf "\nYour IP address is incorrect. Please enter again.\n"
+            read data[domain]
+        fi
+
+        isIpValid=$(isIpValid "${data[domain]}")
+    fi
+
+    if [ "$isIpValid" != true ]; then
+        printExitError "Incorrect IP address. Please try again."
+    fi
 }
 
 function handleInstallationMode() {
