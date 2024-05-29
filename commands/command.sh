@@ -32,6 +32,8 @@ function actionHelp() {
     printf "  export-table-sql      Export a single database table into SQL dump\n"
     printf "  cert-generate         Generate a new Let's Encrypt certificate\n"
     printf "  cert-renew            Renew an existing Let's Encrypt certificate\n"
+    printf "  cert-cron-add         Add a cronjob for automatic renewal Let's Encrypt certificates\n"
+    printf "  cert-cron-remove      Remove a cronjob for automatic renewal Let's Encrypt certificates\n"
     printf "  apply-domain          Apply a domain change\n"
     printf "  help                  Information about the commands\n"
 }
@@ -71,6 +73,31 @@ function getYamlValue {
 function getActualInstalledMode() {
     if [ -f "$homeDirectory/docker-compose.yml" ]; then
         head -n 1 "$homeDirectory/docker-compose.yml" | grep -oP "(?<=MODE: ).*"
+    fi
+}
+
+function addCron() {
+    local search="$1"
+    local cronLine="$2"
+
+    if ! crontab -l > /dev/null 2>&1; then
+        echo "" | sudo crontab -
+    fi
+
+    local hasCron=$(sudo crontab -l | grep -i "$search")
+
+    if [ -z "$hasCron" ]; then
+        (sudo crontab -l; echo "$cronLine") | sudo crontab -
+    fi
+}
+
+function removeCron() {
+    local search="$1"
+
+    local hasCron=$(sudo crontab -l | grep -i "$search")
+
+    if [ -n "$hasCron" ]; then
+        crontab -l | grep -vi "$search" | sudo crontab -
     fi
 }
 
@@ -350,6 +377,14 @@ function actionCertRenew() {
     printf "Done\n\n"
 }
 
+function actionCertCronAdd() {
+    addCron "command.sh cert-renew" "0 1 * * * $homeDirectory/command.sh cert-renew >> $homeDirectory/data/letsencrypt/renew.log 2>&1"
+}
+
+function actionCertCronRemove() {
+    removeCron "command.sh cert-renew"
+}
+
 function actionApplyDomain() {
     case "$(getActualInstalledMode)" in
         letsencrypt )
@@ -527,6 +562,14 @@ case "$action" in
 
     cert-renew )
         actionCertRenew
+        ;;
+
+    cert-cron-add )
+        actionCertCronAdd
+        ;;
+
+    cert-cron-remove )
+        actionCertCronRemove
         ;;
 
     apply-domain )
