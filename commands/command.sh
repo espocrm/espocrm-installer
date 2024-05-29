@@ -35,6 +35,8 @@ function actionHelp() {
     printf "  cert-cron-add         Add a cronjob for automatic renewal Let's Encrypt certificates\n"
     printf "  cert-cron-remove      Remove a cronjob for automatic renewal Let's Encrypt certificates\n"
     printf "  apply-domain          Apply a domain change\n"
+    printf "  voip-cron-add         Add a cronjob for a VoIP connector\n"
+    printf "  voip-cron-remove      Remove a cronjob for a VoIP connector\n"
     printf "  help                  Information about the commands\n"
 }
 
@@ -491,6 +493,28 @@ function actionExportTableSql() {
     actionExportSql "$backupPath" "$tableName" "$tableName"
 }
 
+function actionVoipCronAdd() {
+    local connector=${1:-}
+
+    if [ -z "$connector" ]; then
+        echo "ERROR: The VoIP connector is not specified, ex. \"voip-cron-add Asterisk\""
+        exit 1
+    fi
+
+    addCron "command.php voip $connector" "* * * * * docker exec --user www-data -i espocrm /bin/bash -c \"cd /var/www/html; php -f command.php voip $connector\" >> $homeDirectory/data/voip-cron.log 2>&1"
+}
+
+function actionVoipCronRemove() {
+    local connector=${1:-}
+
+    if [ -z "$connector" ]; then
+        echo "ERROR: The VoIP connector is not specified, ex. \"voip-cron-remove Asterisk\""
+        exit 1
+    fi
+
+    removeCron "command.php voip $connector"
+}
+
 homeDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 action=${1:-help}
@@ -582,5 +606,13 @@ case "$action" in
 
     export-table-sql )
         actionExportTableSql "$option" "$option2"
+        ;;
+
+    voip-cron-add )
+        actionVoipCronAdd "$option"
+        ;;
+
+    voip-cron-remove )
+        actionVoipCronRemove "$option"
         ;;
 esac
