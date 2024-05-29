@@ -263,6 +263,12 @@ function actionRestore() {
 
     rm -rf "${homeDirectory}_OLD"
 
+    case "$(getActualInstalledMode)" in
+        letsencrypt )
+            actionCertCronAdd
+            ;;
+    esac
+
     echo "Done"
 }
 
@@ -393,6 +399,7 @@ function actionApplyDomain() {
             actionStop
             actionCertGenerate
             actionBuild
+            actionCertCronAdd
             ;;
 
         http | ssl )
