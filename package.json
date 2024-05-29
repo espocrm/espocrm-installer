@@ -1,6 +1,6 @@
 {
   "name": "espocrm-installer",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "EspoCRM installation script",
   "repository": {
     "type": "git",
