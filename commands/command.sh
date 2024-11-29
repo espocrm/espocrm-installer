@@ -341,7 +341,7 @@ function actionCertGenerate() {
 
     mkdir -p "$homeDirectory/data/tmp"
 
-    # Run templorary nginx
+    # Run temporary nginx
     echo "server {
         listen 80;
         listen [::]:80;

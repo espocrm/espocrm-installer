@@ -255,7 +255,7 @@ function getActualInstalledMode() {
     fi
 }
 
-function getInstalltionMode() {
+function getInstallationMode() {
     if [ -z "$installationMode" ] || [ -z "${modes[$installationMode]}" ]; then
         printExitError "Unknown installation mode. Please try again."
     fi
@@ -947,7 +947,7 @@ function actionMain() {
     handlePreInstallationMode "$preInstallationMode"
     handleInstallationMode "$installationMode"
 
-    mode=$(getInstalltionMode)
+    mode=$(getInstallationMode)
 
     normalizeData
 
