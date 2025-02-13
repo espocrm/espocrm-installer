@@ -63,6 +63,7 @@ declare -A data=(
     [homeDirectory]="/var/www/espocrm"
     [action]="main"
     [backupPath]="SCRIPT_DIRECTORY/espocrm-backup"
+    [version]="fpm"
 )
 
 declare -A modes=(
@@ -110,6 +111,10 @@ function handleArguments() {
 
             --email)
                 data[email]="${value}"
+                ;;
+
+            --version)
+                data[version]="${value}"
                 ;;
 
             --db-root-password | --dbRootPassword)
@@ -827,6 +832,9 @@ function prepareDocker() {
     mv "./installation-modes/$mode/${data[server]}/docker-compose.yml" "${data[homeDirectory]}/docker-compose.yml"
     mv "./installation-modes/$mode/${data[server]}"/* "${data[homeDirectory]}/data/${data[server]}"
 
+    # Update EspoCRM version in docker-compose.yml
+    updateEspoCrmVersion
+
     # Copy helper commands
     find "./commands" -type f  | while read file; do
         fileName=$(basename "$file")
@@ -839,6 +847,20 @@ function prepareDocker() {
 
     if [ -f "$configFile" ]; then
         sed -i "s#'siteUrl' => '.*'#'siteUrl' => '${data[url]}'#g" "$configFile"
+    fi
+}
+
+function updateEspoCrmVersion() {
+    local dockerComposeFile="${data[homeDirectory]}/docker-compose.yml"
+    if [ -f "$dockerComposeFile" ]; then
+        # If version is "fpm" (default), use it as is
+        # Otherwise append "-fpm" to the version number
+        if [ "${data[version]}" = "fpm" ]; then
+            local imageVersion="fpm"
+        else
+            local imageVersion="${data[version]}-fpm"
+        fi
+        sed -i "s|espocrm/espocrm:fpm|espocrm/espocrm:${imageVersion}|g" "$dockerComposeFile"
     fi
 }
 
