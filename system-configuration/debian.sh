@@ -25,6 +25,11 @@ if ! [ -x "$(command -v openssl)" ]; then
         openssl
 fi
 
+if ! [ -x "$(command -v crontab)" ]; then
+    apt-get install -y --no-install-recommends \
+        cron
+fi
+
 # check and disable a docker snap
 if [ -x "$(command -v docker)" ]; then
     if grep -q "/snap/" "$(command -v docker)"; then
