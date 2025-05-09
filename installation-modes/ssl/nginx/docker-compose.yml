@@ -15,6 +15,12 @@ services:
       MARIADB_PASSWORD: %%DB_PASSWORD%%
     volumes:
       - ./data/mariadb/data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 20s
+      start_period: 10s
+      timeout: 10s
+      retries: 3
     networks:
       - espocrm-network
 
@@ -50,10 +56,11 @@ services:
       ESPOCRM_ADMIN_PASSWORD: %%ADMIN_PASSWORD%%
       ESPOCRM_CONFIG_SITE_URL: "%%ESPOCRM_SITE_URL%%"
     restart: always
-    depends_on:
-      - espocrm-db
     volumes:
       - ./data/espocrm:/var/www/html
+    depends_on:
+      espocrm-db:
+        condition: service_healthy
     networks:
       - espocrm-network
 
