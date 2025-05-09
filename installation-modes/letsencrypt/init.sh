@@ -28,7 +28,7 @@ mkdir -p "./$server/ssl" \
 curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf > "./$server/ssl/ssl-options.conf"
 curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem > "./$server/ssl/dhparams.pem"
 
-# Run templorary nginx
+# Run temporary nginx
 echo "server {
     listen 80;
     listen [::]:80;
