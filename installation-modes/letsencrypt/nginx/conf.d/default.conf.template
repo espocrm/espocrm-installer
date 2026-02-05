@@ -4,12 +4,16 @@ server {
 
     server_name ${NGINX_HOST};
 
-    location ~ /.well-known/acme-challenge {
+    location ^~ /.well-known/acme-challenge {
         allow all;
+        access_log off;
+
         root /var/www/certbot;
     }
 
-    return 301 https://$server_name$request_uri;
+    location / {
+        return 301 https://$server_name$request_uri;
+    }
 }
 
 server {
