@@ -6,7 +6,7 @@
     "type": "git",
     "url": "https://github.com/espocrm/espocrm-installer.git"
   },
-  "author": "Taras Machyshyn, Yurii Kuznietsov, Oleksii Avramenko",
+  "author": "EspoCRM, Inc.",
   "license": "Apache-2.0",
   "devDependencies": {
     "archiver": "^5.3.0",
