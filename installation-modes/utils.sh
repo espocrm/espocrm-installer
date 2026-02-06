@@ -1,4 +1,48 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+function getOs() {
+    local osType="unknown"
+
+    case $(uname | tr '[:upper:]' '[:lower:]') in
+        linux*)
+            local linuxOs=$(getLinuxOs)
+
+            if [ -n "$linuxOs" ]; then
+                osType="$linuxOs"
+            fi
+            ;;
+        darwin*)
+            osType="macOS"
+            ;;
+        msys*)
+            osType="windows"
+            ;;
+    esac
+
+    echo "$osType"
+}
+
+sedEscape() {
+    printf '%s' "$1" | sed 's/[\/&]/\\&/g'
+}
+
+replace() {
+    local pattern="$1"
+    local replacement="$2"
+    local file="$3"
+
+    case "$(getOs)" in
+        macOS)
+            pattern=$(sedEscape "$pattern")
+            replacement=$(sedEscape "$replacement")
+
+            sed -i '' "s#${pattern}#${replacement}#g" "$file"
+            ;;
+        *)
+            sed -i "s#${pattern}#${replacement}#g" "$file"
+            ;;
+    esac
+}
 
 function handleParams() {
     for ARGUMENT in "$@"
@@ -59,10 +103,14 @@ function prepareConfiguration() {
     )
 
     find "./$server" -type f  | while read file; do
+        if ! grep -Iq . "$file"; then
+            continue
+        fi
+
         for key in "${!values[@]}"
         do
             local value="${values[$key]}"
-            sed -i "s#%%${key}%%#${value}#g" "$file"
+            replace "%%${key}%%" "${value}" "$file"
         done
     done
 }
