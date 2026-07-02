@@ -30,14 +30,16 @@ services:
     environment:
       NGINX_HOST: %%DOMAIN_NAME%%
     volumes:
+      - ./data/espocrm/ephemeral/client:/var/www/html/client
+      - ./data/espocrm/ephemeral/public:/var/www/html/public
+      - ./data/espocrm/persistent/custom-client:/var/www/html/client/custom
       - ./data/nginx/conf.d/:/etc/nginx/templates
-      - ./data/espocrm:/var/www/html
       - ./data/nginx/espocrm.conf:/etc/nginx/espocrm.conf
       - ./data/nginx/logs:/var/log/nginx
     restart: always
     depends_on:
-      - espocrm
-      - espocrm-websocket
+      espocrm:
+        condition: service_healthy
     ports:
       - "80:80"
     networks:
@@ -55,38 +57,62 @@ services:
       ESPOCRM_CONFIG_SITE_URL: "%%ESPOCRM_SITE_URL%%"
     restart: always
     volumes:
-     - ./data/espocrm:/var/www/html
+      - ./data/espocrm/persistent/data:/var/www/html/data
+      - ./data/espocrm/persistent/custom:/var/www/html/custom
+      - ./data/espocrm/persistent/custom-client:/var/www/html/client/custom
+      - ./data/espocrm/ephemeral/client:/var/www/html/client
+      - ./data/espocrm/ephemeral/public:/var/www/html/public
     depends_on:
       espocrm-db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bin/command", "app-check"]
+      start_period: 30s
+      interval: 60s
+      timeout: 20s
+      retries: 3
     networks:
       - espocrm-network
 
   espocrm-daemon:
     image: espocrm/espocrm:fpm
     container_name: espocrm-daemon
-    volumes:
-     - ./data/espocrm:/var/www/html
-    restart: always
-    depends_on:
+    volumes_from:
       - espocrm
+    restart: always
     entrypoint: docker-daemon.sh
+    depends_on:
+      espocrm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bin/command", "app-check"]
+      start_period: 30s
+      interval: 180s
+      timeout: 20s
+      retries: 3
     networks:
       - espocrm-network
 
   espocrm-websocket:
-    container_name: espocrm-websocket
     image: espocrm/espocrm:fpm
+    container_name: espocrm-websocket
     environment:
       ESPOCRM_CONFIG_USE_WEB_SOCKET: "true"
       ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBSCRIBER_DSN: "tcp://*:7777"
       ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBMISSION_DSN: "tcp://espocrm-websocket:7777"
-    volumes:
-     - ./data/espocrm:/var/www/html
-    restart: always
-    depends_on:
+    volumes_from:
       - espocrm
-    entrypoint: docker-websocket.sh
+    restart: always
+    entrypoint: docker-daemon.sh
+    depends_on:
+      espocrm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bin/command", "app-check"]
+      start_period: 30s
+      interval: 180s
+      timeout: 20s
+      retries: 3
     ports:
       - "8080:8080"
     networks:
