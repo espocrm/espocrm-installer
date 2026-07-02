@@ -31,9 +31,9 @@ services:
       NGINX_HOST: %%DOMAIN_NAME%%
     restart: always
     volumes:
-      - ./data/espocrm/ephemeral/client:/var/www/html/client
-      - ./data/espocrm/ephemeral/public:/var/www/html/public
-      - ./data/espocrm/persistent/custom-client:/var/www/html/client/custom
+      - ./data/espocrm/ephemeral/client:/var/www/html/client:ro
+      - ./data/espocrm/ephemeral/public:/var/www/html/public:ro
+      - ./data/espocrm/persistent/custom-client:/var/www/html/client/custom:ro
       - ./data/nginx/conf.d/:/etc/nginx/templates
       - ./data/nginx/espocrm.conf:/etc/nginx/espocrm.conf
       - ./data/nginx/logs:/var/log/nginx
