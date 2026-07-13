@@ -16,6 +16,14 @@ wget https://github.com/espocrm/espocrm-installer/releases/latest/download/insta
 sudo bash install.sh -y --ssl --letsencrypt --domain=my-espocrm.com --email=email@my-domain.com
 ```
 
+You can also specify a particular EspoCRM version to install:
+
+```
+sudo bash install.sh --version=8.4.2
+```
+
+If no version is specified, the latest version will be installed.
+
 ## Run (only for development)
 
 ```
