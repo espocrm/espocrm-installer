@@ -25,8 +25,8 @@ mkdir -p "./$server/ssl" \
     "$homeDirectory/data/letsencrypt" \
     ./tmp
 
-curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf > "./$server/ssl/ssl-options.conf"
-curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem > "./$server/ssl/dhparams.pem"
+curl -fsSL https://raw.githubusercontent.com/certbot/certbot/refs/tags/v5.7.0/certbot/src/certbot/_internal/plugins/nginx/tls_configs/options-ssl-nginx.conf > "./$server/ssl/ssl-options.conf"
+curl -fsSL https://raw.githubusercontent.com/certbot/certbot/refs/tags/v5.7.0/certbot/src/certbot/ssl-dhparams.pem > "./$server/ssl/dhparams.pem"
 
 # Run temporary nginx
 echo "server {
