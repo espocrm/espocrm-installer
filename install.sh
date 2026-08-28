@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # EspoCRM installer MASTER
 #
@@ -7,6 +7,12 @@
 # Website: https://www.espocrm.com
 
 set -e
+
+function restoreBackup() {
+    if [ -n "$backupDirectory" ] && [ -d "$backupDirectory" ]; then
+        cp -rp "${backupDirectory}"/* "${data[homeDirectory]}"
+    fi
+}
 
 function printExitError() {
     local message="$1"
@@ -29,14 +35,57 @@ printRedMessage() {
     printf "${red}${message}${default}"
 }
 
-function restoreBackup() {
-    if [ -n "$backupDirectory" ] && [ -d "$backupDirectory" ]; then
-        cp -rp "${backupDirectory}"/* "${data[homeDirectory]}"
-    fi
+function getOs() {
+    local osType="unknown"
+
+    case $(uname | tr '[:upper:]' '[:lower:]') in
+        linux*)
+            local linuxOs=$(getLinuxOs)
+
+            if [ -n "$linuxOs" ]; then
+                osType="$linuxOs"
+            fi
+            ;;
+        darwin*)
+            osType="macOS"
+            ;;
+        msys*)
+            osType="windows"
+            ;;
+    esac
+
+    echo "$osType"
 }
 
-if ! [ $(id -u) = 0 ]; then
-    printExitError "This script should be run as root or with sudo."
+REQUIRED_BASH_MAJOR=6
+BASH_MAJOR="${BASH_VERSION%%.*}"
+
+if [ "$BASH_MAJOR" -lt "$REQUIRED_BASH_MAJOR" ]; then
+    printRedMessage "Bash >= ${REQUIRED_BASH_MAJOR}.0 is required.\nCurrent Bash version: $BASH_VERSION"
+
+if [[ "$(getOs)" == "macOS" ]]; then
+        echo
+        echo "Detected macOS."
+        echo "macOS ships with Bash 3.2 (too old)."
+
+        if ! command -v brew >/dev/null 2>&1; then
+            printExitError "Homebrew is required to install newer Bash.\nInstall Homebrew first:\n  https://brew.sh"
+        fi
+
+        echo "Installing newer Bash via Homebrew..."
+        brew install bash
+
+        NEW_BASH="$(brew --prefix)/bin/bash"
+
+        if [ ! -x "$NEW_BASH" ]; then
+            printExitError "Bash installation failed."
+        fi
+
+        echo "Re-running script with: $NEW_BASH"
+        exec "$NEW_BASH" "$0" "$@"
+    else
+        printExitError "Please upgrade Bash and re-run this script."
+    fi
 fi
 
 # Pre installation modes:
@@ -60,7 +109,7 @@ declare -A data=(
     [dbPassword]=$(openssl rand -hex 10)
     [adminUsername]="admin"
     [adminPassword]=$(openssl rand -hex 6)
-    [homeDirectory]="/var/www/espocrm"
+    [homeDirectory]="/Users/losobka/Projekty/espocrm-installer/instance"
     [action]="main"
     [backupPath]="SCRIPT_DIRECTORY/espocrm-backup"
 )
@@ -177,28 +226,6 @@ function stopProcess() {
     exit 0
 }
 
-function getOs() {
-    local osType="unknown"
-
-    case $(uname | tr '[:upper:]' '[:lower:]') in
-        linux*)
-            local linuxOs=$(getLinuxOs)
-
-            if [ -n "$linuxOs" ]; then
-                osType="$linuxOs"
-            fi
-            ;;
-        darwin*)
-            osType="osx"
-            ;;
-        msys*)
-            osType="windows"
-            ;;
-    esac
-
-    echo "$osType"
-}
-
 function getLinuxOs() {
     declare -a linuxOsList=(centos redhat fedora ubuntu debian mint)
 
@@ -230,10 +257,24 @@ function getHostname() {
 }
 
 function getServerIp() {
-    local serverIP=$(hostname -I | awk '{print $1}')
+    case $(getOs) in
+        macOS )
+            local serverIP=$(ifconfig | awk '/inet / && $2 != "127.0.0.1" {print $2}')
+            ;;
+        * )
+            local serverIP=$(hostname -I | awk '{print $1}')
+            ;;
+    esac
 
     if [ -z "$serverIP" ] || [ "$(isIpValid $serverIP)" != true ]; then
-        serverIP=$(ip route get 1 | awk '{print $NF;exit}')
+      case $(getOs) in
+        macOS )
+          serverIP=$(route get default | awk '/interface:/{print $2}' | xargs ipconfig getifaddr)
+          ;;
+        * )
+          serverIP=$(ip route get 1 | awk '{print $NF;exit}')
+          ;;
+      esac
     fi
 
     if [ "$(isIpValid $serverIP)" = true ]; then
@@ -249,9 +290,22 @@ function getPublicIp() {
     fi
 }
 
+grepAfterKey() {
+    local key="$1"
+
+    case "$(getOs)" in
+        macOS)
+            sed -n "s/^.*${key}: //p"
+            ;;
+        *)
+            grep -oP "(?<=${key}: ).*"
+            ;;
+    esac
+}
+
 function getActualInstalledMode() {
     if [ -f "${data[homeDirectory]}/docker-compose.yml" ]; then
-        head -n 1 "${data[homeDirectory]}/docker-compose.yml" | grep -oP "(?<=MODE: ).*"
+        head -n 1 "${data[homeDirectory]}/docker-compose.yml" | grepAfterKey "(?<=MODE: ).*"
     fi
 }
 
@@ -268,7 +322,7 @@ function getYamlValue {
     local category="$2"
 
     if [ -f "${data[homeDirectory]}/docker-compose.yml" ]; then
-        sed -n "/${category}:/,/networks:/p" "${data[homeDirectory]}/docker-compose.yml" | grep -oP "(?<=${keyName}: ).*" | head -1
+        sed -n "/${category}:/,/networks:/p" "${data[homeDirectory]}/docker-compose.yml" | grepAfterKey $keyName | head -1
     fi
 }
 
@@ -325,12 +379,18 @@ function isPortInUse() {
         return
     fi
 
-    if (echo >"/dev/tcp/localhost/$port") &>/dev/null ; then
-        echo true
-        return
-    fi
-
-    echo false
+    case "$(getOs)" in
+        macOS | osx)
+            lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1 && echo true || echo false
+            ;;
+        *)
+            if (sudo echo >"/dev/tcp/localhost/$port") >/dev/null 2>&1; then
+                echo true
+            else
+                echo false
+            fi
+            ;;
+    esac
 }
 
 function isEmailValidated() {
@@ -397,12 +457,14 @@ function checkFixSystemRequirements() {
 
     case "$os" in
         ubuntu | debian | mint )
-            apt-get update; \
-                apt-get install -y --no-install-recommends \
+            sudo apt-get update; \
+                sudo apt-get install -y --no-install-recommends \
                 curl \
                 unzip
             ;;
 
+        macOS )
+            brew install "${$missingLibs[@]}";;
         * )
             printExitError "Missing libraries: ${missingLibs[@]}. Please install them and try again."
             ;;
@@ -447,7 +509,7 @@ function cleanInstallation() {
 
     backupActualInstallation
 
-    rm -rf "${data[homeDirectory]}"
+#    rm -rf "${data[homeDirectory]}"
 }
 
 function rebaseInstallation() {
@@ -801,14 +863,16 @@ function handleInstallationMode() {
 }
 
 function downloadSourceFiles() {
-    rm -rf ./espocrm-installer-master.zip ./espocrm-installer-master/
-
-    download https://github.com/espocrm/espocrm-installer/archive/refs/heads/master.zip "espocrm-installer-master.zip"
-    unzip -q "espocrm-installer-master.zip"
-
-    if [ ! -d "./espocrm-installer-master" ]; then
-        printExitError "Unable to load source files."
-    fi
+#    rm -rf ./espocrm-installer-master.zip ./espocrm-installer-master/
+#
+#    download https://github.com/espocrm/espocrm-installer/archive/refs/heads/master.zip "espocrm-installer-master.zip"
+#    unzip -q "espocrm-installer-master.zip"
+#
+#    if [ ! -d "./espocrm-installer-master" ]; then
+#        printExitError "Unable to load source files."
+#    fi
+  mkdir espocrm-installer-master
+  cp -R * espocrm-installer-master/
 }
 
 function prepareDocker() {
@@ -824,8 +888,10 @@ function prepareDocker() {
         printExitError "Error: Unable to find \"docker-compose.yml\" file. Try to run the installation again."
     fi
 
-    mv "./installation-modes/$mode/${data[server]}/docker-compose.yml" "${data[homeDirectory]}/docker-compose.yml"
-    mv "./installation-modes/$mode/${data[server]}"/* "${data[homeDirectory]}/data/${data[server]}"
+    mkdir -p "${data[homeDirectory]}/data/${data[server]}"
+    cp -R "./installation-modes/$mode/${data[server]}"/* "${data[homeDirectory]}/data/${data[server]}"
+#    mv "./installation-modes/$mode/${data[server]}/docker-compose.yml" "${data[homeDirectory]}/docker-compose.yml"
+    cp "./installation-modes/$mode/${data[server]}/docker-compose.yml" "${data[homeDirectory]}/docker-compose.yml"
 
     # Copy helper commands
     find "./commands" -type f  | while read file; do
@@ -838,8 +904,33 @@ function prepareDocker() {
     local configFile="${data[homeDirectory]}/data/espocrm/data/config.php"
 
     if [ -f "$configFile" ]; then
-        sed -i "s#'siteUrl' => '.*'#'siteUrl' => '${data[url]}'#g" "$configFile"
+        replace "s#'siteUrl' => '.*'#'siteUrl' => '${data[url]}'#g" "$configFile"
     fi
+}
+sedEscape() {
+    printf '%s' "$1" | sed 's/[\/&]/\\&/g'
+}
+
+replace() {
+    local pattern="$1"
+    local replacement="$2"
+    local file="$3"
+
+    if [ -z "$pattern" ] || [ -z "$replacement" ] || [ -z "$file" ]; then
+        printExitError "replace: usage: replace <pattern> <replacement> <file>" >&2
+    fi
+
+    case "$(getOs)" in
+        macOS)
+            pattern=$(sedEscape "$pattern")
+            replacement=$(sedEscape "$replacement")
+
+            sed -i '' "s#${pattern}#${replacement}#g" "$file"
+            ;;
+        *)
+            sed -i "s#${pattern}#${replacement}#g" "$file"
+            ;;
+    esac
 }
 
 runDockerDatabase() {
@@ -970,7 +1061,9 @@ function actionMain() {
         ubuntu | debian | mint )
             runShellScript "system-configuration/debian.sh"
             ;;
-
+        macOS )
+            runShellScript "system-configuration/macOS.sh"
+            ;;
         * )
             printExitError "Your OS is not supported by the script. We recommend to use Ubuntu server."
             ;;
